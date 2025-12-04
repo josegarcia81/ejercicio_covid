@@ -288,8 +288,11 @@ export class MapComponent implements OnInit, AfterViewInit {
               
             }else if(this.polygonAnterior !== polygonClicado){// Si no son iguales
               console.log('IF NO SON POLIGONOS IGUALES')
-              // Resetear los anteriores
-              this.estadosTocados(this.polygonAnterior)
+              if(!this.borradoPoligono){
+                // Resetear los anteriores
+                this.estadosTocados(this.polygonAnterior)
+                this.borradoPoligono = false;
+              }
               // setear nuevo poligono Anterior
               this.polygonAnterior = polygonClicado;
               this.featureAnterior.set('selected', false)
@@ -617,30 +620,31 @@ export class MapComponent implements OnInit, AfterViewInit {
         console.log('delPolygon toggle pulsado')
         if(active){
           drawPolygon.setActive(false)
-          // this.borradoPoligono = active;// No usado
+          this.borradoPoligono = true;// Usado para resetear estados tocados en el click anterior en map.on('click'
           this.isDrawing = true;
           //this.disableDraw()
           console.log('drawnFeatureAtPixel: ',this.drawnFeatureAtPixel[0])
+          console.log('EstadosTocados - selected - feature[0]', this.estadosTocadosArray[0].get('selected'));
           if(this.drawnFeatureAtPixel[0]){
             const polygon = this.drawnFeatureAtPixel[0].getGeometry() as Polygon;
-            if(this.estadosTocadosArray[0].getStyle() === styleArray[0].rosa){// Comprueba que hay features de estados tocado y si hay los resetea y si no hay no.
+            if(this.estadosTocadosArray[0].get('selected') === true){// Comprueba que hay features de estados tocado y si hay los resetea y si no hay no.
               this.estadosTocados(polygon);
             }
           }
 
-          let feature = this.drawVectorLayer.getSource()?.getFeatures()[0]
-          console.log('FEATURE EN CAPA PINTADA?:',feature)
-          this.drawnVectorSource.removeFeature(feature)
+          let feature = this.drawVectorLayer.getSource()?.getFeatures()[0];
+          console.log('FEATURE EN CAPA PINTADA?:',feature);
+          this.drawnVectorSource.removeFeature(feature);
           //this.drawVectorLayer.getSource()?.removeFeature(feature)
-          console.log('Borrado del Feature')
-          this.estadosTocadosArray = [] // reset de estados tocados
-          console.log('Volver al centro')
-          this.map.get
+          console.log('Borrado del Feature');
+          this.estadosTocadosArray = []; // reset de estados tocados
+          console.log('Volver al centro');
+          this.map.get;
           this.map.getView().animate({center: fromLonLat([-99.92,35.56])}, {zoom: 4},{duration: 600});
-          console.log('Info de estados',this.statesInfo)
+          console.log('Info de estados',this.statesInfo);
           
         }
-        console.log('Quedan Features? =>',this.drawnVectorSource.getFeatures())
+        console.log('Quedan Features? =>',this.drawnVectorSource.getFeatures());
         this.subControlBar.setVisible(false);
         this.isDrawing = false;
       }
