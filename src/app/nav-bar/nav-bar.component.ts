@@ -191,7 +191,7 @@ export class NavBarComponent implements OnInit, AfterViewInit {
     }
     this._covidData.setOriginalStyle(true,state.state,state.selected)
     console.log("Array de comparacion:", this.compareArray);
-    console.log('Click desde el checkbox-NAV',state.selected);
+    console.log('Click desde el checkbox-NAV state.selected',state.selected);
   }
   
   // Pertenece al evento de hacer click en el ojo / Visualizacion de detalles //

@@ -221,6 +221,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       //console.log(usSource.getFeatures());
       //console.log(this.map.getAllLayers())
       this.usSource.getFeatures().forEach((feature,index) => {
+        // Setear propiedad del Feature 'selected' a false por defecto
+        feature.set('selected', false);
         // console.log(feature);
         const state_code = feature.get("ste_stusps_code")
         const matchedState = this.countriesData.find(country => country.getState() === state_code);
@@ -257,30 +259,31 @@ export class MapComponent implements OnInit, AfterViewInit {
           // console.log('Click habilitado:',!this.isDrawing)
           // console.log('Interactions added:',this.map.getInteractions().forEach((item)=>item.getN === 'Draw')
 
+          // Todas las features en el pixel clickado
           const features: any[] = this.map.getFeaturesAtPixel(e.pixel) || [];
-          
+          // Features dibujados en el pixel clickado aplicado filtro de capa(VectorLayer)
           this.drawnFeatureAtPixel = this.map.getFeaturesAtPixel(e.pixel,{layerFilter: (layer)=>{return layer === this.drawVectorLayer;}}) || [];
 
           console.log('Filtro por capa drawnFeatureAtPixel:',this.drawnFeatureAtPixel);
           console.log('AllFeatures at pixel',features);
 
+          // Si hay features dibujados en el pixel clickado
           if(this.drawnFeatureAtPixel.length > 0 ){
             this.subControlBar.setVisible(true); // Si se clica un Feature dibujado se habilita boton borrado/compare
-            
+
+            // Feature clicada en capa drwawnFeatureAtPixel parseada a Polygon
             const polygonClicado = this.drawnFeatureAtPixel[0].getGeometry() as Polygon;
 
+            // Guardar el poligon en poligonoAnterior si no existia porque es el primero
+            // Este primer viaje funciona ok
             if(!this.polygonAnterior){ // Si no existe poligono anterior entra
               console.log('IF NO HAY POLIGONO ANTERIOR');
               this.featureAnterior = this.drawnFeatureAtPixel[0] ;// Guarda el Feature clicado actual como anterior
               this.polygonAnterior = polygonClicado; // Guarda el Poligono clicado actual como anterior
-              const featureClicada = this.drawnFeatureAtPixel[0] as Feature;
-              
+              const featureClicada = this.drawnFeatureAtPixel[0] as Feature; // Guardar el feature clicado
               featureClicada.set('__originalStyle', styleArray[0].polygon);// Setear original Style aqui cogido del array de estilos
-              
               let centerCoords = polygonClicado.getInteriorPoint().getCoordinates();// Recoger coordenadas del centro del poligono
-              
               this.map.getView().animate({center: centerCoords}, {zoom: 5},{duration: 600});// Coger la view del map y viajar a sus coordenadas
-              
               this.estadosTocados(polygonClicado);// Llamar funcion para pintar estados
               
             }else if(this.polygonAnterior !== polygonClicado){// Si no son iguales
@@ -322,7 +325,8 @@ export class MapComponent implements OnInit, AfterViewInit {
             
           }else {this.subControlBar.setVisible(false)}// Si se clica fuera de un Feature dibujado se deshabilita boton borrado/compare
 
-          // console.log('Desde map - state code: ',features[0].get("ste_stusps_code"));
+          console.log('Desde map - state code: ',features[0].get("ste_stusps_code"));
+          // Si hay features en el pixel clickado
           if (features[0].get("ste_stusps_code")) {
             this._covidData.setSelectedState(features[0].get("ste_stusps_code"));
           }
@@ -436,12 +440,14 @@ export class MapComponent implements OnInit, AfterViewInit {
           match?.setStyle(original);
           match?.set('selected', false);
         }
-        console.log('ResetStile',this.statesInfo)
+        console.log(match?.get('selected'));
+        console.log('ResetStyle',this.statesInfo);
         // this.usSource.getFeatures().forEach((feature,index) => {
         //   const original = feature.get('__originalStyle');
         //   feature.setStyle(original);
         //   feature.set('selected', false);
         // })
+        this.usSource.forEachFeature(feature=>console.log('Holi',feature.get('selected')))
       }
     })
 
@@ -875,11 +881,16 @@ export class MapComponent implements OnInit, AfterViewInit {
             if(feature.getStyle() === styleArray[0].rosa){
               const originalStyle= feature.get('__originalStyle');
               feature.setStyle(originalStyle); // colorear con color original
-              //feature.set('__selected', true);
+              feature.set('selected', false);// Poner propiedad del Feature a false
+              // Eliminamos del array el estado que ya no esta tocado
+              // const index = this.estadosTocadosArray.indexOf(feature);
+              // this.estadosTocadosArray.splice(index,1)
 
               // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
               this.statesInfo.forEach((state)=>{
-                if(state.name === feature.get('ste_name')){
+                // console.log(state.name);
+                // console.log(feature.get('ste_name').toString());
+                if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
                   // Avisamos del cambio de estado al servicio
                   this._covidData.setSelectedState(state.state)
                   console.log('ESTA ENTRANDO AQUI')
@@ -890,7 +901,7 @@ export class MapComponent implements OnInit, AfterViewInit {
              }else{
               // Si no es rosa lo pinta de rosa
               feature.setStyle(styleArray[0].rosa); // colorear
-              //feature.set('__selected', true);
+              feature.set('selected', true);// Poner propiedad del Feature a true
               // Tras meter en el array y cambiar el color cambiamos el select
               this.statesInfo.forEach((state)=>{
                 if(state.name === feature.get('ste_name')[0]){
