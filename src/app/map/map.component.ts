@@ -769,16 +769,18 @@ export class MapComponent implements OnInit, AfterViewInit {
     const layerExtentA = polygon.getExtent();
     // console.log('Extent: ',layerExtentA)
 
-
+    //Siempre que entra primero resetea el contenido del array
+    this.estadosTocadosArray = []
 
     // this.estadosTocadosArray.splice(0, this.estadosTocadosArray.length);
     // const estadosTocadosArray :Array<Feature>= []
-    if(!this.modificado || !this.transformado){
-      this.estadosTocadosArray = []
-        // Reste del array para que no se rellene cada vez que se pulsa
-      //console.log('RESET ARRAY ESTADOS TOCADOS:',this.estadosTocadosArray)
-      // console.log('Ha reseteado el array por no modif ni trans:',this.estadosTocadosArray)
-    }
+
+    // if(!this.modificado || !this.transformado){
+      
+    //     // Reste del array para que no se rellene cada vez que se pulsa
+    //   //console.log('RESET ARRAY ESTADOS TOCADOS:',this.estadosTocadosArray)
+    //   // console.log('Ha reseteado el array por no modif ni trans:',this.estadosTocadosArray)
+    // }
      
     let i = 0;
     this.usSource.forEachFeatureInExtent(layerExtentA, (feature: Feature)=>{
@@ -823,93 +825,118 @@ export class MapComponent implements OnInit, AfterViewInit {
           i++;
           // const matchedState = this.usSource.getFeatures().find((feature: any) => feature.get('ste_name').toString() === stateName) as Feature
           console.log(this.estadosTocadosArray);
-          const match = this.estadosTocadosArray.find((estado:Feature)=>{
-            console.log('Nombre estado del array:',estado.get('ste_name').toString())
-            console.log('Nombre del estado del feature:',feature.get('ste_name').toString())
-            return estado.get('ste_name')[0] === feature.get('ste_name')[0]
-          });
+          // const match = this.estadosTocadosArray.find((estado:Feature)=>{
+          //   console.log('Nombre estado del array:',estado.get('ste_name').toString())
+          //   console.log('Nombre del estado del feature:',feature.get('ste_name').toString())
+          //   return estado.get('ste_name')[0] === feature.get('ste_name')[0]
+          // });
 
-          match as Feature;
-          console.log('Type of Match:',typeof(match), match, feature)
+          // match as Feature;
+          // console.log('Type of Match:',typeof(match), match, feature)
 
           // si no esta en el array lo meto en el array y lo pinto
-          if(!match){// Si ha entrado de primeras y deberia porque al ser undefined deberia ser como un false Entra siempre que no este modificado el poligono
+          // if(!match){// Si ha entrado de primeras y deberia porque al ser undefined deberia ser como un false Entra siempre que no este modificado el poligono
+            
+            //Si hay coincidencia, coge el feature que viene del source usSource y lo inserta al array
             this.estadosTocadosArray.push(feature);
 
+            // Si el estilo es rosa (seleccionado) lo resetea al original
             if(feature.getStyle() === styleArray[0].rosa){
-              feature.setStyle(feature.get('__originalStyle')); // colorear
+              const originalStyle= feature.get('__originalStyle');
+              feature.setStyle(originalStyle); // colorear con color original
               //feature.set('__selected', true);
+
+              // Tras meter en el array y cambiar el color cambiamos el select en el array thi.statesInfo
               this.statesInfo.forEach((state)=>{
                 if(state.name === feature.get('ste_name')){
+                  // Avisamos del cambio de estado al servicio
                   this._covidData.setSelectedState(state.state)
                   console.log('ESTA ENTRANDO AQUI')
                   state.selected = false;
                   console.log(state.selected);
                 }
               })
-            }else{
+             }else{
+              // Si no es rosa lo pinta de rosa
               feature.setStyle(styleArray[0].rosa); // colorear
               //feature.set('__selected', true);
               // Tras meter en el array y cambiar el color cambiamos el select
               this.statesInfo.forEach((state)=>{
                 if(state.name === feature.get('ste_name')[0]){
+                  // Avisamos del cambio de estado al servicio
                   this._covidData.setSelectedState(state.state)
-                  //state.selected = true;
+                  state.selected = true;
                 }
               })
             }
 
             
           // console.log('Poligono anterior Selected:',this.featureAnterior.get('selected'))
-          }else if(match && !this.featureAnterior.get('selected')){
+          // }else if(match && !this.featureAnterior.get('selected')){
 
-            console.log('Poligono anterior Selected:',this.featureAnterior.get('selected'))
-            let index = this.estadosTocadosArray.indexOf(feature.get('ste_name').toString());
-            // this.estadosTocadosArray.splice(index,1);
-            if(feature.getStyle() === styleArray[0].rosa){
-              feature.setStyle(feature.get('__originalStyle')); // colorear
-              //feature.set('__selected', true);
-              this.statesInfo.forEach((state)=>{
-              if(state.name === feature.get('ste_name')[0]){
-                this._covidData.setSelectedState(state.state)
-                state.selected = false;
-              }
-            })
-            }else{
-              feature.setStyle(styleArray[0].rosa); // colorear
-              //feature.set('__selected', true);
-            }
+          //   console.log('Poligono anterior Selected:',this.featureAnterior.get('selected'))
+          //   let index = this.estadosTocadosArray.indexOf(feature.get('ste_name').toString());
+          //   // this.estadosTocadosArray.splice(index,1);
+          //   if(feature.getStyle() === styleArray[0].rosa){
+          //     feature.setStyle(feature.get('__originalStyle')); // colorear
+          //     //feature.set('__selected', true);
+          //     this.statesInfo.forEach((state)=>{
+          //     if(state.name === feature.get('ste_name')[0]){
+          //       this._covidData.setSelectedState(state.state)
+          //       state.selected = false;
+          //     }
+          //   })
+          //   }else{
+          //     feature.setStyle(styleArray[0].rosa); // colorear
+          //     //feature.set('__selected', true);
+          //   }
             
-            this.statesInfo.forEach((state)=>{
-              if(state.name === feature.get('ste_name')[0]){
-                this._covidData.setSelectedState(state.state)
-                state.selected = true;
-              }
-            })
+            // this.statesInfo.forEach((state)=>{
+            //   if(state.name === feature.get('ste_name')[0]){
+            //     this._covidData.setSelectedState(state.state)
+            //     state.selected = true;
+            //   }
+            // })
 
-          }
+          // }
 
-        }else{
-          
+        }/*else{*/
+          // ESTA REPETIDO HAY QUE CAMBIARLO // DEJO COMENTADO PARA VER SI FUNCIONA BIEN
+
           // this.estadosTocadosArray.splice(0, this.estadosTocadosArray.length)
-          if(feature.getStyle() === styleArray[0].rosa){
-              feature.setStyle(feature.get('__originalStyle')); // colorear
-              this.estadosTocadosArray.splice(0,1)
-              feature.set('selected', false);
-            // }else{
-            //   feature.setStyle(styleArray[0].rosa); // colorear
-            //   //feature.set('__selected', true);
-            }
 
-            // Revisar 03/12/2025
-            this.statesInfo.forEach((state)=>{
-              console.log(feature.get('ste_name')[0]);
-              if(state.name === feature.get('ste_name')[0]){
-                this._covidData.setSelectedState(state.state)
-                state.selected = false;
-              }
-            })
-        }
+          // // Si no hay interseccion y el estado esta pintado de rosa (seleccionado) lo resetea
+          // if(feature.getStyle() === styleArray[0].rosa){
+          //     const originalStyle= feature.get('__originalStyle');
+          //     feature.setStyle(originalStyle); // colorear con color original
+          //     // Eliminamos del array el estado que ya no esta tocado
+          //     this.estadosTocadosArray.splice(0,1)
+          //     // Recorremos el array de estados para cambiar el selected
+          //     this.statesInfo.forEach((state)=>{
+          //       if(state.name === feature.get('ste_name')){
+          //         // Avisamos del cambio de estado al servicio
+          //         this._covidData.setSelectedState(state.state)
+          //         console.log('ESTA ENTRANDO AQUI')
+          //         state.selected = false;
+          //         console.log(state.selected);
+          //       }
+          //     })
+              
+          //     //feature.set('selected', false);
+          //   // }else{
+          //   //   feature.setStyle(styleArray[0].rosa); // colorear
+          //   //   //feature.set('__selected', true);
+          //   }
+
+            // // Revisar 03/12/2025
+            // this.statesInfo.forEach((state)=>{
+            //   console.log(feature.get('ste_name')[0]);
+            //   if(state.name === feature.get('ste_name')[0]){
+            //     this._covidData.setSelectedState(state.state)
+            //     state.selected = false;
+            //   }
+            // })
+        /*}*/
       } catch (err) {
           console.warn('Intersection test failed', err);
       }
