@@ -273,7 +273,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
             // Feature clicada en capa drwawnFeatureAtPixel parseada a Polygon
             const polygonClicado = this.drawnFeatureAtPixel[0].getGeometry() as Polygon;
-
+            console.log('Pligonos Pintados Anterior y Clicado:',this.polygonAnterior, polygonClicado);
             // Guardar el poligon en poligonoAnterior si no existia porque es el primero
             // Este primer viaje funciona ok
             if(!this.polygonAnterior){ // Si no existe poligono anterior entra
@@ -286,13 +286,16 @@ export class MapComponent implements OnInit, AfterViewInit {
               this.map.getView().animate({center: centerCoords}, {zoom: 5},{duration: 600});// Coger la view del map y viajar a sus coordenadas
               this.estadosTocados(polygonClicado);// Llamar funcion para pintar estados
               
-            }else if(this.polygonAnterior !== polygonClicado){// Si no son iguales
+             }else if(this.polygonAnterior !== polygonClicado){// Si no son iguales
               console.log('IF NO SON POLIGONOS IGUALES')
               if(!this.borradoPoligono){
                 // Resetear los anteriores
                 this.estadosTocados(this.polygonAnterior)
                 this.borradoPoligono = false;
-              }
+              }//else if(this.polygonAnterior.get('ol_uid') !== polygonClicado.get('ol_uid')){
+              //   this.estadosTocados(this.polygonAnterior)
+              // }
+
               // setear nuevo poligono Anterior
               this.polygonAnterior = polygonClicado;
               this.featureAnterior.set('selected', false)
@@ -307,7 +310,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             
               this.estadosTocados(polygonClicado);
               
-            }else{
+             }else{
               // setear nuevo poligono Anterior
               this.polygonAnterior = polygonClicado;
               this.featureAnterior.set('selected', false)// Esto creo que no hace nada
@@ -487,7 +490,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       interaction: new Draw({
                     type: 'Polygon',
                     source: this.drawVectorLayer.getSource()!,
-                    style: styleArray[0].polygon,
+                    style: styleArray[0].polygon
                     // geometryName: 'pol_'+this.drawnVectorSource.getFeatures().length
                   }),
       active:false,
@@ -499,6 +502,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
       
     })
+
     this.controlBar.addControl(drawPolygon)
 
       // Interaccion Modify
@@ -506,7 +510,6 @@ export class MapComponent implements OnInit, AfterViewInit {
                     source: this.drawVectorLayer.getSource()!,
                     style: styleArray[0].polygon
                   });
-
       // Botton Modificar Poligono
       // const drawInteraction = arrayInteractions[0].draw
     const modifyPolygon = new Toggle({
@@ -525,16 +528,15 @@ export class MapComponent implements OnInit, AfterViewInit {
     })
     // Verificacion para pintar poligonos.
     this.modifyInteraction.on('modifyend',(e: any)=>{
-      this.modificado = true;
+      // this.modificado = true;
       let feature = e.features.item(0);
       console.log('Modificada Modify:', e, feature);
-      this.estadosTocados(feature.getGeometry() as Polygon);
+      // this.estadosTocados(feature.getGeometry() as Polygon);
     })
     // Aniadir toggle a barra principal.
     this.controlBar.addControl(modifyPolygon);
 
-
-      // Interaccion Transform
+    // Interaccion Transform
     this.transformInteraction = new Transform ({
       enableRotation: true,
       enableScaling: true,
@@ -544,7 +546,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.featureSeleccionada = feature;
         return layer === this.drawVectorLayer }
     })
-      // Botton Transforma Poligono
+      // Botton Transformar Poligono
     const transformPolygon = new Toggle({
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-expand-icon lucide-expand"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/></svg>',
       className: 'ctrl-button',
@@ -562,9 +564,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Usar para volver a reseleccionar estados
     // Escuchar eventos de transformación
     this.transformInteraction.on(['rotateend','scaleend','translateend'], (e:any) => {
-      this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon)
+      // this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon)
       console.log('Modificada Transformacion:', e);
-      this.transformado = true;
+      // this.transformado = true;
     });
     // this.transform.on(['rotatestart', 'rotating', 'rotateend'], (e:any) => {
     //   console.log('Rotación:', e);
@@ -696,7 +698,11 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.statesInfo.forEach(state=>state.selected = false);
 
         // Reset estilos Features dibujados
-        this.drawnVectorSource.getFeatures().forEach(feature=>feature.setStyle(feature.get('__originalStyle')));
+        this.drawnVectorSource.getFeatures().forEach((feature)=>{
+          feature.setStyle(feature.get('__originalStyle'))
+          feature.set('selected',false);
+          
+        });
       
       // }
 
@@ -946,7 +952,42 @@ export class MapComponent implements OnInit, AfterViewInit {
 
           // }
 
-        }/*else{*/
+        }else{
+          // Si no hay interseccion Verificar el color del estado para cambiarlo 
+          if(feature.getStyle() === styleArray[0].rosa){
+              const originalStyle= feature.get('__originalStyle');
+              feature.setStyle(originalStyle); // colorear con color original
+              feature.set('selected', false);// Poner propiedad del Feature a false
+              // Eliminamos del array el estado que ya no esta tocado
+              // const index = this.estadosTocadosArray.indexOf(feature);
+              // this.estadosTocadosArray.splice(index,1)
+
+              // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
+              this.statesInfo.forEach((state)=>{
+                // console.log(state.name);
+                // console.log(feature.get('ste_name').toString());
+                if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
+                  // Avisamos del cambio de estado al servicio
+                  this._covidData.setSelectedState(state.state)
+                  console.log('ESTA ENTRANDO AQUI')
+                  state.selected = false;
+                  console.log(state.selected);
+                }
+              })
+            //  }else{
+            //   // Si no es rosa lo pinta de rosa
+            //   feature.setStyle(styleArray[0].rosa); // colorear
+            //   feature.set('selected', true);// Poner propiedad del Feature a true
+            //   // Tras meter en el array y cambiar el color cambiamos el select
+            //   this.statesInfo.forEach((state)=>{
+            //     if(state.name === feature.get('ste_name')[0]){
+            //       // Avisamos del cambio de estado al servicio
+            //       this._covidData.setSelectedState(state.state)
+            //       state.selected = true;
+            //     }
+            //   })
+          }
+        }
           // ESTA REPETIDO HAY QUE CAMBIARLO // DEJO COMENTADO PARA VER SI FUNCIONA BIEN
 
           // this.estadosTocadosArray.splice(0, this.estadosTocadosArray.length)
