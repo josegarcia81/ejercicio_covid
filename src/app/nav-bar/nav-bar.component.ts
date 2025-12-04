@@ -276,6 +276,7 @@ export class NavBarComponent implements OnInit, AfterViewInit {
     this.visible = false;
     // console.log("Array: ", this.compareArray);
     this.statesInfo.forEach(state=>state.selected=false)
+    // Avisar al servicio para resetear estilos en mapa
     this._covidData.setOriginalStyles(true)
   }
   // Relleno del array de comparacion

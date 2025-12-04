@@ -221,7 +221,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       //console.log(usSource.getFeatures());
       //console.log(this.map.getAllLayers())
       this.usSource.getFeatures().forEach((feature,index) => {
-        console.log(feature);
+        // console.log(feature);
         const state_code = feature.get("ste_stusps_code")
         const matchedState = this.countriesData.find(country => country.getState() === state_code);
         const positives = matchedState?.getPositive();
@@ -250,7 +250,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     });
 
     
-    // Cambiar estilo al hacer click en un estado //
+      // Cambiar estilo al hacer click en un estado //
     
       this.map.on('click', (e) => {
         if(!this.isDrawing){
@@ -410,7 +410,10 @@ export class MapComponent implements OnInit, AfterViewInit {
         }
       
       });
-    
+
+    // Cometado porque no le veo sentido ahora mismo
+    // Resetear estilos de los estados //
+    // Lo llamo para que el subscribe este activo y escuche los cambios
     this.resetStyles()
     
     // Subscribe que hace que se resetee el estilo de un estado
@@ -421,7 +424,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       // console.log('Click desde el checkbox-MAP',select);
       if(activated){
         const match = this.usSource.getFeatures().find(feature=>feature.get('ste_stusps_code') === state_code)
-         console.log('Match de Reset-Styles metodo-Map',match)
+        console.log('Match de Reset-Style metodo-Map',match)
         if(match && select){
           match.setStyle(styleArray[0].rosa)
           console.log('entra en uno')
@@ -508,6 +511,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.isDrawing = active;
         this.subControlBar.setVisible(false);
         this.modificado = true;
+        //this._covidData.setOriginalStyles(true)
       }
     })
     // Verificacion para pintar poligonos.
@@ -607,7 +611,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         console.log('delPolygon toggle pulsado')
         if(active){
           drawPolygon.setActive(false)
-          this.borradoPoligono = active;// No usado
+          // this.borradoPoligono = active;// No usado
           this.isDrawing = true;
           //this.disableDraw()
           console.log('drawnFeatureAtPixel: ',this.drawnFeatureAtPixel[0])
@@ -666,7 +670,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     
 
   }
-
+  // Funciona ok.
   /** Description Subscribe que hace que se resetee el estilo de todos los estados */
   resetStyles() {
     // Subscribe que hace que se resetee el estilo de todos los estados
@@ -674,21 +678,48 @@ export class MapComponent implements OnInit, AfterViewInit {
       console.log('Activado el reseteo de estilos')
       if(activated){
         // Reset estilos Estados
-        this.usSource.getFeatures().forEach((feature,index) => {
-          const original = feature.get('__originalStyle');
-          feature.setStyle(original);
-          feature.set('selected',false);
+
+        // A cada feature en el source de estados le pone su estilo original guardado
+        this.usSource.getFeatures().forEach(feature=>feature.setStyle(feature.get('__originalStyle')));
+
+        // A cada estado en this.statesInfo le pone selected a false
+        this.statesInfo.forEach(state=>state.selected = false);
+
+        // Reset estilos Features dibujados
+        this.drawnVectorSource.getFeatures().forEach(feature=>feature.setStyle(feature.get('__originalStyle')));
+      
+      // }
+
+      //   this.usSource.getFeatures().forEach((feature,index) => {
+      //     const original = feature.get('__originalStyle');
+      //     feature.setStyle(original);
+      //     //feature.set('selected',false);
+      //     // Buscar entre los estados el que coincida con el feature y poner selected a false
+      //     this.statesInfo.forEach((state)=>{
+      //           if(state.name === feature.get('ste_name')){
+      //             // Avisamos del cambio de estado al servicio
+      //             //this._covidData.setSelectedState(state.state)
+                  
+      //             state.selected = false;
+      //             console.log(state.selected);
+      //           }
+      //         })
           
-        })
-        // Reset estilos Features
-        this.drawnVectorSource.getFeatures().forEach((feature,index) => {
-          const original = feature.get('__originalStyle');
-          feature.setStyle(original);
-          feature.set('selected',false);
-        })
-        
+      //     // Meter llamada a this.reset
+      //     // state.selected = false;
+      //     // console.log(state.selected);
+          
+      //   })
+      //   // Reset estilos Features
+      //   this.drawnVectorSource.getFeatures().forEach((feature,index) => {
+      //     const original = feature.get('__originalStyle');
+      //     feature.setStyle(original);
+      //     feature.set('selected',false);
+      //   })
+      console.log('Array pintado desde resetStyles()',this.statesInfo)
       }
     })
+    
     // throw new Error('Method not implemented.');
   }
 
@@ -846,7 +877,7 @@ export class MapComponent implements OnInit, AfterViewInit {
               feature.setStyle(originalStyle); // colorear con color original
               //feature.set('__selected', true);
 
-              // Tras meter en el array y cambiar el color cambiamos el select en el array thi.statesInfo
+              // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
               this.statesInfo.forEach((state)=>{
                 if(state.name === feature.get('ste_name')){
                   // Avisamos del cambio de estado al servicio
