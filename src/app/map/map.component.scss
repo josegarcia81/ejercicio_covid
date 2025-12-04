@@ -1,0 +1,118 @@
+.map{
+    /* fill parent container (app-map) */
+    width: 100%;
+    height: 30em;
+    display: block;
+    position: relative;
+    z-index: 0;
+}
+
+.letrero-info{
+    width: 10vw;
+    height: 10vw
+}
+
+#letreroTexto{
+    position:absolute;
+    background-color: #000000;
+    font-size: 1rem;
+    color: #ffffff;
+    padding: 0.5rem;
+    border-radius: 0.50rem;
+
+}
+
+/* Controls */
+::ng-deep {
+
+  .mapControls{
+    position: absolute !important;
+    top: unset !important;
+    bottom: 0.8em;
+    height: 2.4em;
+    align-items: center;
+    left: 7rem !important;
+    z-index: 1000000;          /* encima del mapa */
+    pointer-events: auto;   /* permitir interacción */
+    display: flex;
+    flex-direction: row; /* apilar controles horizontalmente */
+    gap: 0.5rem;
+    background: rgba(255,255,255,0.85);
+    padding: 0.5rem;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+
+    .ctrl-button{
+      padding: 0.5em !important;
+      background-color: white;
+      color: blue;
+      padding : 10px;
+
+      svg{
+        box-sizing: content-box !important;
+      }
+    }
+    
+  
+  }
+  .sub-toolbar{
+    position: absolute !important;
+    bottom: 3.8em !important;
+    height: 3.2em;
+    align-items: center;
+    left: 0rem !important;
+    z-index: 1000000;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 0.5rem !important;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    
+    .sub-button{
+      padding: 0.5em !important;
+      background-color: white !important;
+      color: blue;
+      padding : 10px;
+      margin-left: 3px !important;
+
+      svg{
+        box-sizing: content-box !important;
+      }
+
+    
+    }
+  }
+}
+.drawControls{
+  position: absolute;
+  top: 10rem;
+  left: 1rem;
+  z-index: 1000000;          /* encima del mapa */
+  pointer-events: auto;   /* permitir interacción */
+  
+  flex-direction: row; /* apilar controles horizontalmente */
+  gap: 0.5rem;
+  background: rgba(255,255,255,0.85);
+  padding: 0.5rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+
+  .button{
+    height: 1rem;
+    width: 1rem;
+  }
+}
+
+.ctrl-button{
+  background-color: white;
+  color: blue;
+  padding : 10px;
+}
+
+// .sub-toolbar.ol-control{
+//   position:absolute;
+//   height: 2em;
+// }

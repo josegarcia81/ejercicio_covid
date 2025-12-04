@@ -1,0 +1,81 @@
+<!-- Listbox - Filter de primeng para filtrar/buscar -->
+<p-listbox 
+    [options]="cities"
+    [(ngModel)]="selectedCity"
+    [filter]="true" 
+    [style]="{ width: '15rem' }" 
+    [listStyle]="{'max-height': '100px'}"
+    class="p-listbox-icon-left" 
+    (onClick)="selecState($event)">
+</p-listbox>
+<!-- p-autocomplete - Filter de primeng para filtrar/buscar -->
+<!-- <p-autoComplete 
+    [(ngModel)]="selectedCountry" 
+    [suggestions]="cities" 
+    field = ''
+    (completeMethod)="search($event)">
+</p-autoComplete> -->
+
+<!-- div para el mapa -->
+<div id="map" class="map">
+    <!-- <div class="mapControls" id="controls" role="group" aria-label="Map controls"> -->
+        <!-- Se puede usar un ngFor usando un array para los nombre de los iconos y otro para los clicks -->
+        <!-- <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}" 
+        [disabled]="ctrlDisabled"
+        (click)="drawPoligon()">
+            <i-lucide name="vector-square" [size]="15"></i-lucide>
+        </p-button>
+        <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+        [disabled]="ctrlDisabled">
+            <i-lucide name="minimize-2" [size]="15"></i-lucide>
+        </p-button>
+        <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+        [disabled]="ctrlDisabled">
+            <i-lucide name="move" [size]="15"></i-lucide>
+        </p-button>
+        <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+        [disabled]="ctrlDisabled">
+            <i-lucide name="scissors" [size]="15"></i-lucide>
+        </p-button>
+        <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+        [disabled]="ctrlDisabled">
+            <i-lucide name="squares-subtract" [size]="15"></i-lucide>
+        </p-button>
+        <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+        [disabled]="ctrlDisabled">
+            <i-lucide name="squares-unite" [size]="15"></i-lucide>
+        </p-button>
+        <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+        [disabled]="ctrlDisabled">
+            <i-lucide name="squares-exclude" [size]="15"></i-lucide>
+        </p-button>
+        <p-button
+        [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+        [disabled]="ctrlDisabled">
+            <i-lucide name="file-plus-corner" [size]="15"></i-lucide>
+        </p-button> -->
+    <!-- </div>
+    <div class="drawControls" id="drawControls" role="group" aria-label="Draw Controls">
+        <p-button
+            [style]="{'background-color': 'white', 'color': 'blue', 'padding' : '10px'}"
+            [disabled]="ctrlDisabled"
+            (click)="delPoligon()">
+            <i-lucide name="trash-2" [size]="15"></i-lucide>
+        </p-button>
+    </div> -->
+</div>
+
+<!-- Div para mostrar el letrero sobre los estados -->
+<div  class="letrero-info">
+    <p  #letreroTexto id="letreroTexto"></p>
+</div>
+
+<!-- Div para los controles -->
+ 

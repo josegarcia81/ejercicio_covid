@@ -6,6 +6,9 @@
       "type": "npm",
       "script": "start",
       "isBackground": true,
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "problemMatcher": {
         "owner": "typescript",
         "pattern": "$tsc",

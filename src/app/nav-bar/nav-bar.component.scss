@@ -1,0 +1,52 @@
+div{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+p-table{
+    width: 99%;
+}
+.nombreEstado{
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+::ng-deep{
+    .ancho{
+        max-width: fit-content !important;
+
+        i{
+            width: 1.3rem;
+            background-color: red;
+            border-radius: 11px;
+            text-align: center;
+            padding: 2px;
+        }
+    }
+
+    .dialogContent{
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: baseline !important;
+    }
+    .botonOk{
+        align-items:end !important;
+    }
+    p-accordion{
+        margin-left: 10px !important;
+        height: 75% !important;
+    }
+    p-button{
+        margin-top: 10px;
+    }
+    
+}
+
+.rojo{
+        color:red;
+    }
+.verde{
+    color: rgb(60, 233, 60);
+}

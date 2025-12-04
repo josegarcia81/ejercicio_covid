@@ -1,0 +1,33 @@
+
+/* Root layout: left nav (20%), right map (80%) */
+:host {
+    display: flex;
+    flex-direction: row;
+    height: 97vh; /* full viewport height */
+    width: 97vw;
+    overflow: hidden;
+}
+
+/* Left navigation panel */
+app-nav-bar.nav {
+    width: 40%;
+    min-width: 160px;
+    background: #f5f5f5;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Map area on the right */
+app-map.app-map {
+    width: 60%;
+    height: 100%;
+}
+
+// /* Make sure router outlet (if present) doesn't push layout */
+// :host ::ng-deep router-outlet {
+//     display: none;
+// }
+
+
