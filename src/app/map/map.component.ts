@@ -77,6 +77,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   public draw!:Draw; // Interaccion que permite pintar
   private drawnFeatureAtPixel!: any[]
   private polIndex: number = 0;
+  private drawInteraction!: Draw;
     // Eliminar Poligono
   private estadosTocadosArray: Array<Feature>= []
   private borradoPoligono: boolean = false;
@@ -264,16 +265,18 @@ export class MapComponent implements OnInit, AfterViewInit {
           // Features dibujados en el pixel clickado aplicado filtro de capa(VectorLayer)
           this.drawnFeatureAtPixel = this.map.getFeaturesAtPixel(e.pixel,{layerFilter: (layer)=>{return layer === this.drawVectorLayer;}}) || [];
 
+          console.log('Nombre del Feature Seleccionado pixel:',this.drawnFeatureAtPixel[0]?.get('name'));// Con interrogacion la indicamos que puede haber o no para que no falle.
           console.log('Filtro por capa drawnFeatureAtPixel:',this.drawnFeatureAtPixel);
           console.log('AllFeatures at pixel',features);
 
           // Si hay features dibujados en el pixel clickado
           if(this.drawnFeatureAtPixel.length > 0 ){
             this.subControlBar.setVisible(true); // Si se clica un Feature dibujado se habilita boton borrado/compare
+            delPoligon.setActive(false); // Activar boton borrar poligono
 
             // Feature clicada en capa drwawnFeatureAtPixel parseada a Polygon
             const polygonClicado = this.drawnFeatureAtPixel[0].getGeometry() as Polygon;
-            console.log('Pligonos Pintados Anterior y Clicado:',this.polygonAnterior, polygonClicado);
+            // console.log('Pligonos Pintados Anterior y Clicado:',this.polygonAnterior, polygonClicado);
             // Guardar el poligon en poligonoAnterior si no existia porque es el primero
             // Este primer viaje funciona ok
             if(!this.polygonAnterior){ // Si no existe poligono anterior entra
@@ -331,7 +334,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             
           }else {this.subControlBar.setVisible(false)}// Si se clica fuera de un Feature dibujado se deshabilita boton borrado/compare
 
-          console.log('Desde map - state code: ',features[0].get("ste_stusps_code"));
+          // console.log('Desde map - state code: ',features[0].get("ste_stusps_code"));
           // Si hay features en el pixel clickado
           if (features[0].get("ste_stusps_code")) {
             this._covidData.setSelectedState(features[0].get("ste_stusps_code"));
@@ -371,7 +374,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           // Se comprueba si el feature ya esta seleccionado
           // Se almacena el estilo original en una propiedad del feature
           
-          console.log('Entrado en if de comprobacion de estilo color rosa',feature.getStyle() === styleArray[0].rosa)
+          // console.log('Entrado en if de comprobacion de estilo color rosa',feature.getStyle() === styleArray[0].rosa)
           if(feature.getStyle() === styleArray[0].rosa){
             console.log('Entrado en if de comprobacion de estilo color rosa')
             feature.setStyle(original);
@@ -393,7 +396,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           // Cambiado el valor de selected
           // Buscar en indice en el array
           const index = this.statesInfo.findIndex(state => state.state === feature.get('ste_stusps_code'));
-          console.log(this.statesInfo, index, feature);
+          // console.log(this.statesInfo, index, feature);
           // Cambiar estado del selected para que aparezca o no el checkbox
           if (index !== -1) {
             this.statesInfo[index].selected = this.statesInfo[index].selected ? false : true ;
@@ -416,7 +419,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           // }
           // console.log('Desde Map - Selected ' + features[0].get('selected'));
           //console.log('Get All Layers:   ',this.map.getAllLayers())
-          console.log('MAP-STATES-INFO: ',this.statesInfo);
+          // console.log('MAP-STATES-INFO: ',this.statesInfo);
         }
       
       });
@@ -481,26 +484,32 @@ export class MapComponent implements OnInit, AfterViewInit {
       toggleOne: true
            
     })
+
+    this.drawInteraction = new Draw({
+                    type: 'Polygon',
+                    source: this.drawVectorLayer.getSource()!,
+                    style: styleArray[0].polygon
+                    // geometryName: 'pol_'+this.drawnVectorSource.getFeatures().length
+                  })
         // Botton Pintar Poligono
         // const drawInteraction = arrayInteractions[0].draw
     const drawPolygon = new Toggle({
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon lucide-pencil-line"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>',
       className: 'ctrl-button',
       title: 'Draw',
-      interaction: new Draw({
-                    type: 'Polygon',
-                    source: this.drawVectorLayer.getSource()!,
-                    style: styleArray[0].polygon
-                    // geometryName: 'pol_'+this.drawnVectorSource.getFeatures().length
-                  }),
+      interaction: this.drawInteraction,
       active:false,
       onToggle: (active:boolean)=>{
         this.isDrawing = active
         this.subControlBar.setVisible(false)
-        // this.polIndex++
+        // this.polIndex++;
         // console.log('Toggle:',this.isDrawing)
       }
-      
+    })
+    this.drawInteraction.on('drawend',(e:any)=>{
+      e.feature.set('name','pol_'+this.polIndex);
+      this.polIndex++;
+      console.log('Dibujado Draw:', e);
     })
 
     this.controlBar.addControl(drawPolygon)
@@ -621,32 +630,33 @@ export class MapComponent implements OnInit, AfterViewInit {
       onToggle: (active:any)=>{
         console.log('delPolygon toggle pulsado')
         if(active){
+          //Continuar aqui conpara el nombre del feature.get('name') y borrarlo de drawnVectorSource
           drawPolygon.setActive(false)
           this.borradoPoligono = true;// Usado para resetear estados tocados en el click anterior en map.on('click'
           this.isDrawing = true;
           //this.disableDraw()
-          console.log('drawnFeatureAtPixel: ',this.drawnFeatureAtPixel[0])
+
+          console.log('drawnFeatureAtPixel: ',this.drawnFeatureAtPixel[0].get('name'));
           console.log('EstadosTocados - selected - feature[0]', this.estadosTocadosArray[0].get('selected'));
-          if(this.drawnFeatureAtPixel[0]){
-            const polygon = this.drawnFeatureAtPixel[0].getGeometry() as Polygon;
-            if(this.estadosTocadosArray[0].get('selected') === true){// Comprueba que hay features de estados tocado y si hay los resetea y si no hay no.
+          const featureToDelete = this.drawnFeatureAtPixel.find(feature=>feature.get('name') === this.drawnFeatureAtPixel[0].get('name'));
+          console.log('Feature to delete:',featureToDelete);
+          if(featureToDelete){
+            // Antes de borrar el feature comprobar si hay estados tocados y resetearlos
+            const polygon = featureToDelete.getGeometry() as Polygon;
+            if(this.estadosTocadosArray[0]?.get('selected') === true){// Comprueba que hay features de estados tocado y si hay los resetea y si no hay no.
               this.estadosTocados(polygon);
             }
-          }
 
-          let feature = this.drawVectorLayer.getSource()?.getFeatures()[0];
-          console.log('FEATURE EN CAPA PINTADA?:',feature);
-          this.drawnVectorSource.removeFeature(feature);
-          //this.drawVectorLayer.getSource()?.removeFeature(feature)
-          console.log('Borrado del Feature');
-          this.estadosTocadosArray = []; // reset de estados tocados
-          console.log('Volver al centro');
-          this.map.get;
-          this.map.getView().animate({center: fromLonLat([-99.92,35.56])}, {zoom: 4},{duration: 600});
-          console.log('Info de estados',this.statesInfo);
+            this.drawnVectorSource.removeFeature(featureToDelete); // Borrado del feature
+            console.log('Borrado del Feature');
+            this.estadosTocadosArray = []; // reset de array estadosTocados
+            console.log('Volver al centro');
+            this.map.getView().animate({center: fromLonLat([-99.92,35.56])}, {zoom: 4},{duration: 600}); // Volver al centro
+          }
           
         }
-        console.log('Quedan Features? =>',this.drawnVectorSource.getFeatures());
+        console.log('Quedan Features en drawnSource? =>',this.drawnVectorSource.getFeatures());
+        console.log('Quedan Features en estadosTocados? =>',this.estadosTocadosArray);
         this.subControlBar.setVisible(false);
         this.isDrawing = false;
       }
@@ -732,7 +742,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       //     feature.setStyle(original);
       //     feature.set('selected',false);
       //   })
-      console.log('Array pintado desde resetStyles()',this.statesInfo)
+      // console.log('Array pintado desde resetStyles()',this.statesInfo)
       }
     })
     
@@ -745,11 +755,11 @@ export class MapComponent implements OnInit, AfterViewInit {
    * @param {*} event 
    */
   selecState(event:any){
-    console.log('LECTURA estado anterior: ',this.estadoAnterior?.get('ste_name'));
+    // console.log('LECTURA estado anterior: ',this.estadoAnterior?.get('ste_name'));
     const stateName = event.value;
     const matchedState = this.usSource.getFeatures().find((feature: any) => feature.get('ste_name').toString() === stateName) as Feature;
-    console.log('Estado Seleccionado:',matchedState.get('ste_name'));
-    console.log('Estado inicio:',matchedState);
+    // console.log('Estado Seleccionado:',matchedState.get('ste_name'));
+    // console.log('Estado inicio:',matchedState);
 
     
     if(!this.estadoAnterior){

@@ -125,7 +125,7 @@ export class NavBarComponent implements OnInit, AfterViewInit {
         // Buscar en indice en el array
         const index = this.statesInfo.findIndex(state => state.state === stCode);
         // Cambiar estado del selected para que aparezca o no el checkbox
-        console.log(this.statesInfo, index);
+        // console.log(this.statesInfo, index);
         this.statesInfo[index].selected = this.statesInfo[index].selected ? false : true ;
         
           // Si el indice es valido
@@ -158,7 +158,7 @@ export class NavBarComponent implements OnInit, AfterViewInit {
           }
           //this.compareArray.push(this.covidDataArray.find(item => item.getState() === this.statesInfo[0].state)!);
         }
-        console.log('NAV-BAR-STATES-INFO: ',this.statesInfo);
+        // console.log('NAV-BAR-STATES-INFO: ',this.statesInfo);
       }
     });
 
