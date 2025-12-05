@@ -10,7 +10,7 @@ import Style from "ol/style/Style";
 const polygon = new Style({
     fill: new Fill({
     color:[78, 191, 255, 0.58]
-    })
+    }) 
 })
 // Estilo del relleno de los Feature poligon state
 // Lineas de limitacion de estados
