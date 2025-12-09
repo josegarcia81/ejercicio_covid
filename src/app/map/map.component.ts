@@ -19,7 +19,7 @@ import { fromLonLat } from 'ol/proj';
 import { Geometry, Polygon } from 'ol/geom';
 
 // LIBRERIA TURF //
-import { booleanIntersects } from '@turf/turf';
+import { booleanIntersects, featureCollection, union } from '@turf/turf';
 
 
 // LIBRERIA OL-EXT //
@@ -269,7 +269,38 @@ export class MapComponent implements OnInit, AfterViewInit {
 
           console.log('Nombre del Feature Seleccionado pixel:',this.drawnFeatureAtPixel[0]?.get('name'));// Con interrogacion la indicamos que puede haber o no para que no falle.
           console.log('Filtro por capa drawnFeatureAtPixel:',this.drawnFeatureAtPixel);
-          console.log('AllFeatures at pixel',features);
+          console.log('AllFeatures at pixel',features[0]!.get('geometry').getCoordinates());
+
+          // const olFeature = features[0];
+          // const usTurfFeature = new GeoJSON().writeFeatureObject(olFeature);
+          
+          // const drawnTurfFeature = new GeoJSON().writeFeatureObject(this.drawnFeatureAtPixel[0]!);
+
+          // console.log('turfPolygon',turfPolygon.getCoordinates());
+          // console.log('turfPolygon GeoJson',usTurfPolygonGeoJSON);
+
+          // const formatGJ = new GeoJSON();
+      
+          // // GeoJSON del polígono dibujado (en lon/lat EPSG:4326) — compatible con Turf
+          // const drawnGeoJSON = formatGJ.writeFeatureObject(this.drawnFeatureAtPixel[0]!, { // estoy cogiendo el numero 0 tengo que mandar el clickado arriba en on click
+          //   featureProjection: this.map.getView().getProjection(),
+          //   dataProjection: 'EPSG:4326'
+          // });
+
+          // // convertir la feature del estado a GeoJSON en EPSG:4326 para Turf
+          // const stateGeoJSON = formatGJ.writeFeatureObject(features[0], {
+          //   featureProjection: this.map.getView().getProjection(),
+          //   dataProjection: 'EPSG:4326'
+          // });
+
+          // const unionPolygon = union(featureCollection([drawnGeoJSON.geometry as any, stateGeoJSON.geometry as any]));
+          // const newPolygon = new Feature({
+          //   geometry: formatGJ.readGeometry(unionPolygon!.geometry),
+          // })
+          // console.log('Union Polygon Turf:',unionPolygon!.geometry);
+          // console.log('New Polygon OL:',newPolygon.getGeometry());
+
+          // this.drawnVectorSource.addFeature(newPolygon);
 
           // Si hay features dibujados en el pixel clickado
           if(this.drawnFeatureAtPixel.length > 0 ){
@@ -438,8 +469,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         }
       
       });
-
-    // Cometado porque no le veo sentido ahora mismo
+      
     // Resetear estilos de los estados //
     // Lo llamo para que el subscribe este activo y escuche los cambios
     this.resetStyles()
@@ -556,6 +586,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       // this.modificado = true;
       let feature = e.features.item(0);
       console.log('Modificada Modify:', e, feature);
+      this.estadosTocados(feature.getGeometry() as Polygon);
       // this.estadosTocados(feature.getGeometry() as Polygon);
     })
     // Aniadir toggle a barra principal.
@@ -582,16 +613,22 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.subControlBar.setVisible(false);
         this.isDrawing = active
         if (active && this.featureSeleccionada) {
-        this.transformInteraction.select(this.featureSeleccionada);
-        console.log('Feature seleccionada:', this.featureSeleccionada);
-      }}
+          this.transformInteraction.select(this.featureSeleccionada);
+          console.log('Feature seleccionada:', this.featureSeleccionada);
+          
+        }
+        this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon);
+        this.subControlBar.setVisible(true);
+      }
     });
     // Usar para volver a reseleccionar estados
     // Escuchar eventos de transformación
     this.transformInteraction.on(['rotateend','scaleend','translateend'], (e:any) => {
-      // this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon)
-      console.log('Modificada Transformacion:', e);
-      // this.transformado = true;
+      
+      let feature = e.features.item(0);
+      console.log('Modificada Transformacion:', e, feature);
+      // this.estadosTocados(feature.getGeometry() as Polygon);
+      
     });
     // this.transform.on(['rotatestart', 'rotating', 'rotateend'], (e:any) => {
     //   console.log('Rotación:', e);
@@ -736,8 +773,10 @@ export class MapComponent implements OnInit, AfterViewInit {
         // Reset estilos Estados
 
         // A cada feature en el source de estados le pone su estilo original guardado
-        this.usSource.getFeatures().forEach(feature=>feature.setStyle(feature.get('__originalStyle')));
-
+        this.usSource.getFeatures().forEach((feature)=>{
+          feature.setStyle(feature.get('__originalStyle'));
+          feature.set('selected',false);
+        });
         // A cada estado en this.statesInfo le pone selected a false
         this.statesInfo.forEach(state=>state.selected = false);
 
@@ -747,7 +786,11 @@ export class MapComponent implements OnInit, AfterViewInit {
           feature.set('selected',false);
           
         });
+        this.estadosTocadosArray = [];// Reset del array de estados tocados
+        
+        this.isDrawing = false; 
       }
+      this.subControlBar.setVisible(false);
     })
     
     // throw new Error('Method not implemented.');
@@ -879,7 +922,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           
           //Si hay coincidencia, coge el feature que viene del source usSource y lo inserta al array
           this.estadosTocadosArray.push(feature);
-          console.log('Valores true:false feature clicado, feature intersectado',this.drawnFeatureAtPixel[0].get('selected'),feature.get('selected'));
+          //console.log('Valores true:false feature clicado, feature intersectado',this.drawnFeatureAtPixel[0].get('selected'),feature.get('selected'));
 
           if(this.drawnFeatureAtPixel[0].get('selected') === true && feature.get('selected') !== true){
             
@@ -919,65 +962,7 @@ export class MapComponent implements OnInit, AfterViewInit {
               })
             }
           
-          // // Si el estilo es rosa (seleccionado) lo resetea al original
-          // if(feature.getStyle() === styleArray[0].rosa){
-          //   const originalStyle= feature.get('__originalStyle');
-          //   feature.setStyle(originalStyle); // colorear con color original
-          //   feature.set('selected', false);// Poner propiedad del Feature a false
-          //   // Eliminamos del array el estado que ya no esta tocado
-          //   // const index = this.estadosTocadosArray.indexOf(feature);
-          //   // this.estadosTocadosArray.splice(index,1)
-
-          //   // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
-          //   this.statesInfo.forEach((state)=>{
-          //     // console.log(state.name);
-          //     // console.log(feature.get('ste_name').toString());
-          //     if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
-          //       // Avisamos del cambio de estado al servicio
-          //       this._covidData.setSelectedState(state.state)
-          //       console.log('ESTA ENTRANDO AQUI')
-          //       state.selected = false;
-          //       console.log(state.selected);
-          //     }
-          //   })
-          //   }else{
-          //   // Si no es rosa lo pinta de rosa
-          //   feature.setStyle(styleArray[0].rosa); // colorear
-          //   feature.set('selected', true);// Poner propiedad del Feature a true
-          //   // Tras meter en el array y cambiar el color cambiamos el select
-          //   this.statesInfo.forEach((state)=>{
-          //     if(state.name === feature.get('ste_name')[0]){
-          //       // Avisamos del cambio de estado al servicio
-          //       this._covidData.setSelectedState(state.state)
-          //       state.selected = true;
-          //     }
-          //   })
-          // }
-         
-
-          // Si no hay interseccion Verificar el color del estado para cambiarlo 
-          // if(feature.getStyle() === styleArray[0].rosa){
-          //     const originalStyle= feature.get('__originalStyle');
-          //     feature.setStyle(originalStyle); // colorear con color original
-          //     feature.set('selected', false);// Poner propiedad del Feature a false
-          //     // Eliminamos del array el estado que ya no esta tocado
-          //     // const index = this.estadosTocadosArray.indexOf(feature);
-          //     // this.estadosTocadosArray.splice(index,1)
-
-          //     // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
-          //     this.statesInfo.forEach((state)=>{
-          //       // console.log(state.name);
-          //       // console.log(feature.get('ste_name').toString());
-          //       if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
-          //         // Avisamos del cambio de estado al servicio
-          //         this._covidData.setSelectedState(state.state)
-          //         console.log('ESTA ENTRANDO AQUI')
-          //         state.selected = false;
-          //         console.log(state.selected);
-          //       }
-          //     })
-          // }
-         }else{ // TODO: SEGUIR AQUI, sI NO INTERSECTA PONER LOS ESTADOS EN ROSA Y DESSELECCIONAR DEL NAV-BAR
+         }else{ // TODO: SEGUIR AQUI, sI NO INTERSECTA PONER LOS ESTADOS EN COLOR ORIGINAL Y DESSELECCIONAR DEL NAV-BAR = FALSE
 
           feature.setStyle(feature.get('__originalStyle')); // reset al original
           feature.set('selected', false);

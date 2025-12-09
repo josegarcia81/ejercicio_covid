@@ -136,6 +136,11 @@ export class NavBarComponent implements OnInit, AfterViewInit {
           // lo meto el primero
           this.statesInfo = [stateData as StateInfo, ...this.statesInfo]
           // console.log(this.statesInfo);
+
+          const match = this.compareArray.find((item) => item.getState() === stateData!.state);
+          if(!match){
+            this.arrayComparacion(stateData , index) // Relleno del array de comparacion
+          }
   
           // console.log('Indice del estado seleccionado: ' + index);
           // console.log('Estado cambiado: ' + stateData?.name);
@@ -146,18 +151,24 @@ export class NavBarComponent implements OnInit, AfterViewInit {
           // console.log(this.statesInfo[0].selected)
   
           // Meter el elemento en el array si no esta
-          const match = this.compareArray.find((item) => item.getState() === stateData!.state);
-          if(this.statesInfo[0].selected && !match){
-            // console.log(this.compareArray.length)
-            this.arrayComparacion(stateData , index)
-          } else {
-            this.compareArray.forEach((item, index) => {
+          // const match = this.compareArray.find((item) => item.getState() === stateData!.state);
+          // if(this.statesInfo[0].selected && !match){
+          //   // console.log(this.compareArray.length)
+          //   this.arrayComparacion(stateData , index) // Relleno del array de comparacion
+          // } else {
+          //   this.compareArray.forEach((item, index) => {
+          //     if(item.getState() === stateData!.state){
+          //       this.compareArray.splice(index, 1); // Elimino el estado del array de comparacion
+          //     }
+          //   })
+          // }
+          //this.compareArray.push(this.covidDataArray.find(item => item.getState() === this.statesInfo[0].state)!);
+        } else if(index !== -1 && value === false){
+          this.compareArray.forEach((item, index) => {
               if(item.getState() === stateData!.state){
-                this.compareArray.splice(index, 1);
+                this.compareArray.splice(index, 1); // Elimino el estado del array de comparacion
               }
             })
-          }
-          //this.compareArray.push(this.covidDataArray.find(item => item.getState() === this.statesInfo[0].state)!);
         }
         // console.log('NAV-BAR-STATES-INFO: ',this.statesInfo);
       }
