@@ -115,10 +115,11 @@ export class NavBarComponent implements OnInit, AfterViewInit {
     
     // Suscricion a selectedState$ para controlar el estado que se clica desde map
     this._covidData.selectedState$.subscribe((stateCode) => {
-      if (!!stateCode) {
+      if (!!stateCode.codigo) {
         //REVISAR AQUI
         //console.log('NavBar componente - Estado seleccionado: ' + typeof(stateName));
-        const stCode:string = stateCode;
+        const stCode:string = stateCode.codigo;
+        const value: boolean = stateCode.value;
         console.log('Desde NavBar - State code: ' + stateCode);
         // Buscar el estado emitido
         const stateData = this.statesInfo.find(state => state.state === stCode);
@@ -126,10 +127,10 @@ export class NavBarComponent implements OnInit, AfterViewInit {
         const index = this.statesInfo.findIndex(state => state.state === stCode);
         // Cambiar estado del selected para que aparezca o no el checkbox
         // console.log(this.statesInfo, index);
-        this.statesInfo[index].selected = this.statesInfo[index].selected ? false : true ;
+        this.statesInfo[index]!.selected = value;
         
           // Si el indice es valido
-        if(index !== -1){
+        if(index !== -1 && value === true){
           // Elimino el elemento 
           this.statesInfo.splice(index, 1);
           // lo meto el primero

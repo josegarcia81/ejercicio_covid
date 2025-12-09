@@ -59,11 +59,12 @@ export class MapComponent implements OnInit, AfterViewInit {
   public selectedState:string = '';
   public usSource!: VectorSource;
   public estadoAnterior!:Feature;
-
+  
   // Will be set in ngAfterViewInit when the ViewChild is available
   public etiqueta!: HTMLElement;
   public letreroTextoOverlay!: Overlay;
   public ctrlDisabled: boolean = false;
+  private selected: boolean = false; // Usado de toggle al seleccionar un feature seleccionado.
   
   // Controles //
   public controlBar!: InstanceType<typeof Bar>;
@@ -274,10 +275,11 @@ export class MapComponent implements OnInit, AfterViewInit {
           if(this.drawnFeatureAtPixel.length > 0 ){
             this.subControlBar.setVisible(true); // Si se clica un Feature dibujado se habilita boton borrado/compare
             delPoligon.setActive(false); // Activar boton borrar poligono
-            let selected = this.drawnFeatureAtPixel[0].get('selected') ? false : true;
-            console.log('Valor de selected del poldibujado',selected) // marcar como seleccionado ? false : true;
-            this.drawnFeatureAtPixel[0].set('selected', selected);// Marcar como seleccionado el feature Clicado
-            
+
+            this.selected = this.drawnFeatureAtPixel[0].get('selected') ? false : true;
+            console.log('Valor de selected del poldibujado',this.selected) // marcar como seleccionado ? false : true;
+            this.drawnFeatureAtPixel[0].set('selected', this.selected);// Marcar como seleccionado el feature Clicado
+            console.log('Valor de selected del poldibujado 2',this.drawnFeatureAtPixel[0].get('selected'))
             // Feature clicada en capa drwawnFeatureAtPixel parseada a Polygon
             const polygonClicado = this.drawnFeatureAtPixel[0].getGeometry() as Polygon;
             // console.log('Pligonos Pintados Anterior y Clicado:',this.polygonAnterior, polygonClicado);
@@ -324,7 +326,7 @@ export class MapComponent implements OnInit, AfterViewInit {
              }else{
               // setear nuevo poligono Anterior
               this.polygonAnterior = polygonClicado;
-              this.featureAnterior.set('selected', false)// Esto creo que no hace nada
+              // this.featureAnterior.set('selected', false)// Esto creo que no hace nada
 
               const featureClicada = this.drawnFeatureAtPixel[0] as Feature;
               // Seteo al crearla
@@ -345,8 +347,11 @@ export class MapComponent implements OnInit, AfterViewInit {
 
           // console.log('Desde map - state code: ',features[0].get("ste_stusps_code"));
           // Si hay features en el pixel clickado
-          if (features[0].get("ste_stusps_code")) {
-            this._covidData.setSelectedState(features[0].get("ste_stusps_code"));
+          if (features[0].get('selected') === true && this.drawnFeatureAtPixel.length === 0) {
+            this._covidData.setSelectedState(features[0].get("ste_stusps_code"),false);
+
+          }else{
+            this._covidData.setSelectedState(features[0].get("ste_stusps_code"),true);
           }
           // console.log('geometry' +features[0].get('geometry'));
           // console.log(features[0].get('ste_area_code'));
@@ -644,7 +649,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           //Continuar aqui conpara el nombre del feature.get('name') y borrarlo de drawnVectorSource
           drawPolygon.setActive(false)
           this.borradoPoligono = true;// Usado para resetear estados tocados en el click anterior en map.on('click'
-          this.isDrawing = true;
+          this.isDrawing = true; // Deshabilitar la funcion click
           //this.disableDraw()
 
           console.log('drawnFeatureAtPixel: ',this.drawnFeatureAtPixel[0].get('name'));
@@ -654,8 +659,26 @@ export class MapComponent implements OnInit, AfterViewInit {
           if(featureToDelete){
             // Antes de borrar el feature comprobar si hay estados tocados y resetearlos
             const polygon = featureToDelete.getGeometry() as Polygon;
-            if(this.estadosTocadosArray[0]?.get('selected') === true){// Comprueba que hay features de estados tocado y si hay los resetea y si no hay no.
-              this.estadosTocados(polygon);
+            if(this.estadosTocadosArray.length > 0){// Comprueba que hay features de estados tocado y si hay los resetea y si no hay no.
+              this.estadosTocadosArray.forEach((stateFeature)=>{
+                const original = stateFeature.get('__originalStyle');
+                stateFeature.setStyle(original);
+                stateFeature.set('selected', false);
+
+                this.statesInfo.forEach((state)=>{
+                  // console.log(state.name);
+                  // console.log(feature.get('ste_name').toString());
+                  if(state.name === stateFeature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
+                    // Avisamos del cambio de estado al servicio
+                    this._covidData.setSelectedState(state.state,false);
+                    console.log('ESTA ENTRANDO AQUI');
+                    state.selected = false;
+                    // console.log(state.selected);
+                  }
+                })
+
+              });
+              // this.estadosTocados(polygon);
             }
 
             this.drawnVectorSource.removeFeature(featureToDelete); // Borrado del feature
@@ -780,7 +803,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       //matchedState.set('__originalStyle', matchedState.getStyle());
       matchedState.set('__selected', true);
       matchedState.setStyle(styleArray[0].rosa)
-      this._covidData.setSelectedState(matchedState.get('ste_stusps_code'))
+      this._covidData.setSelectedState(matchedState.get('ste_stusps_code'),true)
       
       //console.log('a entrado')
     }
@@ -804,8 +827,12 @@ export class MapComponent implements OnInit, AfterViewInit {
     //   this.drawnFeatureAtPixel[0].set('selected', false);
     //   this.drawnFeatureAtPixel[0].setStyle(this.drawnFeatureAtPixel[0].get('__originalStyle'));
     // }
+    // this.usSource.forEachFeature((feature: Feature)=>{
 
-    this.usSource.forEachFeatureInExtent(layerExtentA, (feature: Feature)=>{
+
+
+    // })
+    this.usSource.forEachFeature((feature: Feature)=>{
 
       // COMPARACION CON EXTENT //
       // const layerExtentB = feature.getGeometry()?.getExtent()
@@ -852,64 +879,121 @@ export class MapComponent implements OnInit, AfterViewInit {
           
           //Si hay coincidencia, coge el feature que viene del source usSource y lo inserta al array
           this.estadosTocadosArray.push(feature);
+          console.log('Valores true:false feature clicado, feature intersectado',this.drawnFeatureAtPixel[0].get('selected'),feature.get('selected'));
 
-          // Si el estilo es rosa (seleccionado) lo resetea al original
-          if(feature.getStyle() === styleArray[0].rosa){
-            const originalStyle= feature.get('__originalStyle');
-            feature.setStyle(originalStyle); // colorear con color original
-            feature.set('selected', false);// Poner propiedad del Feature a false
-            // Eliminamos del array el estado que ya no esta tocado
-            // const index = this.estadosTocadosArray.indexOf(feature);
-            // this.estadosTocadosArray.splice(index,1)
-
-            // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
+          if(this.drawnFeatureAtPixel[0].get('selected') === true && feature.get('selected') !== true){
+            
+            feature.setStyle(styleArray[0].rosa); // colorear con color original
+            feature.set('selected', true);// Poner propiedad del Feature a true
+            this._covidData.setSelectedState(feature.get('ste_stusps_code'),true);   
+            // Tras cambiar el color cambiamos el select en el array this.statesInfo y en nav-bar
             this.statesInfo.forEach((state)=>{
               // console.log(state.name);
               // console.log(feature.get('ste_name').toString());
               if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
                 // Avisamos del cambio de estado al servicio
-                this._covidData.setSelectedState(state.state)
-                console.log('ESTA ENTRANDO AQUI')
+                // 
+                console.log('ESTA ENTRANDO AQUI');
                 state.selected = false;
-                console.log(state.selected);
+                // console.log(state.selected);
               }
             })
-            }else{
-            // Si no es rosa lo pinta de rosa
-            feature.setStyle(styleArray[0].rosa); // colorear
-            feature.set('selected', true);// Poner propiedad del Feature a true
-            // Tras meter en el array y cambiar el color cambiamos el select
-            this.statesInfo.forEach((state)=>{
-              if(state.name === feature.get('ste_name')[0]){
-                // Avisamos del cambio de estado al servicio
-                this._covidData.setSelectedState(state.state)
-                state.selected = true;
-              }
-            })
-          }
-         }else{
-          // Si no hay interseccion Verificar el color del estado para cambiarlo 
-          if(feature.getStyle() === styleArray[0].rosa){
-              const originalStyle= feature.get('__originalStyle');
-              feature.setStyle(originalStyle); // colorear con color original
-              feature.set('selected', false);// Poner propiedad del Feature a false
-              // Eliminamos del array el estado que ya no esta tocado
-              // const index = this.estadosTocadosArray.indexOf(feature);
-              // this.estadosTocadosArray.splice(index,1)
-
+           
+          }else if(this.drawnFeatureAtPixel[0].get('selected') === false && feature.get('selected') === true){
+              // this.drawnFeatureAtPixel[0].setStyle(this.drawnFeatureAtPixel[0].get('__originalStyle'));
+              feature.setStyle(feature.get('__originalStyle')); // reset al original
+              feature.set('selected', false);
+              this._covidData.setSelectedState(feature.get('ste_stusps_code'),false);
               // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
               this.statesInfo.forEach((state)=>{
                 // console.log(state.name);
                 // console.log(feature.get('ste_name').toString());
                 if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
                   // Avisamos del cambio de estado al servicio
-                  this._covidData.setSelectedState(state.state)
-                  console.log('ESTA ENTRANDO AQUI')
-                  state.selected = false;
-                  console.log(state.selected);
+                  //this._covidData.setSelectedState(state.state,);
+                  console.log('ESTA ENTRANDO AQUI');
+                  // state.selected = false;
+                  // Revisar esto   //console.log(state.selected);
+                  //////////////////// this.drawnFeatureAtPixel[0].set('selected', false);
                 }
               })
-          }
+            }
+          
+          // // Si el estilo es rosa (seleccionado) lo resetea al original
+          // if(feature.getStyle() === styleArray[0].rosa){
+          //   const originalStyle= feature.get('__originalStyle');
+          //   feature.setStyle(originalStyle); // colorear con color original
+          //   feature.set('selected', false);// Poner propiedad del Feature a false
+          //   // Eliminamos del array el estado que ya no esta tocado
+          //   // const index = this.estadosTocadosArray.indexOf(feature);
+          //   // this.estadosTocadosArray.splice(index,1)
+
+          //   // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
+          //   this.statesInfo.forEach((state)=>{
+          //     // console.log(state.name);
+          //     // console.log(feature.get('ste_name').toString());
+          //     if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
+          //       // Avisamos del cambio de estado al servicio
+          //       this._covidData.setSelectedState(state.state)
+          //       console.log('ESTA ENTRANDO AQUI')
+          //       state.selected = false;
+          //       console.log(state.selected);
+          //     }
+          //   })
+          //   }else{
+          //   // Si no es rosa lo pinta de rosa
+          //   feature.setStyle(styleArray[0].rosa); // colorear
+          //   feature.set('selected', true);// Poner propiedad del Feature a true
+          //   // Tras meter en el array y cambiar el color cambiamos el select
+          //   this.statesInfo.forEach((state)=>{
+          //     if(state.name === feature.get('ste_name')[0]){
+          //       // Avisamos del cambio de estado al servicio
+          //       this._covidData.setSelectedState(state.state)
+          //       state.selected = true;
+          //     }
+          //   })
+          // }
+         
+
+          // Si no hay interseccion Verificar el color del estado para cambiarlo 
+          // if(feature.getStyle() === styleArray[0].rosa){
+          //     const originalStyle= feature.get('__originalStyle');
+          //     feature.setStyle(originalStyle); // colorear con color original
+          //     feature.set('selected', false);// Poner propiedad del Feature a false
+          //     // Eliminamos del array el estado que ya no esta tocado
+          //     // const index = this.estadosTocadosArray.indexOf(feature);
+          //     // this.estadosTocadosArray.splice(index,1)
+
+          //     // Tras meter en el array y cambiar el color cambiamos el select en el array this.statesInfo
+          //     this.statesInfo.forEach((state)=>{
+          //       // console.log(state.name);
+          //       // console.log(feature.get('ste_name').toString());
+          //       if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
+          //         // Avisamos del cambio de estado al servicio
+          //         this._covidData.setSelectedState(state.state)
+          //         console.log('ESTA ENTRANDO AQUI')
+          //         state.selected = false;
+          //         console.log(state.selected);
+          //       }
+          //     })
+          // }
+         }else{ // TODO: SEGUIR AQUI, sI NO INTERSECTA PONER LOS ESTADOS EN ROSA Y DESSELECCIONAR DEL NAV-BAR
+
+          feature.setStyle(feature.get('__originalStyle')); // reset al original
+          feature.set('selected', false);
+          this._covidData.setSelectedState(feature.get('ste_stusps_code'),false);
+          // Tras no intersectar cambiamos el select en el array this.statesInfo
+          this.statesInfo.forEach((state)=>{
+            // console.log(state.name);
+            // console.log(feature.get('ste_name').toString());
+            if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
+              // Avisamos del cambio de estado al servicio
+              //this._covidData.setSelectedState(state.state)
+              console.log('ESTA ENTRANDO AQUI METODO NO INTERSECT')
+              state.selected = false;
+              console.log(state.selected);
+            }
+          })
         }
 
       } catch (err) {

@@ -16,8 +16,12 @@ export interface Population {
 })
 export class CovidDataService {
   // Subject para emitir estado para la visualizacion //
-  private selectedStateSubject: BehaviorSubject<string> = new BehaviorSubject<string>('');
-  public selectedState$: Observable<string> = this.selectedStateSubject.asObservable();
+  private selectedStateSubject: BehaviorSubject<{codigo: string,
+                                                value: boolean,
+                                                }> = new BehaviorSubject<{codigo: string,
+                                                                        value: boolean,
+                                                                        }>({codigo: '', value: false});
+  public selectedState$ = this.selectedStateSubject.asObservable();
 
   public activateCompare: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
 
@@ -61,13 +65,13 @@ export class CovidDataService {
       );
   }
 
-  setSelectedState(stateCode: string) {
+  setSelectedState(stateCode: string, value: boolean){
     // El if es para no reemitir el mismo valor y evitar bucles interminables
     // if(this.selectedStateSubject.value === stateName){
     //   return
     // }
     // Si habilito el control de bucles no me cambia el click
-    this.selectedStateSubject.next(stateCode);
+    this.selectedStateSubject.next({codigo : stateCode, value: value});
     // console.log("NEXT")
   }
 
