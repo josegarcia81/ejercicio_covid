@@ -120,7 +120,7 @@ export class NavBarComponent implements OnInit, AfterViewInit {
         //console.log('NavBar componente - Estado seleccionado: ' + typeof(stateName));
         const stCode:string = stateCode.codigo;
         const value: boolean = stateCode.value;
-        console.log('Desde NavBar - State code: ' + stateCode);
+        // console.log('Desde NavBar - State code: ' + stateCode);
         // Buscar el estado emitido
         const stateData = this.statesInfo.find(state => state.state === stCode);
         // Buscar en indice en el array

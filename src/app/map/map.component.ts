@@ -16,10 +16,10 @@ import GeoJSON from 'ol/format/GeoJSON';
 import Feature from 'ol/Feature';
 import Overlay from 'ol/Overlay';
 import { fromLonLat } from 'ol/proj';
-import { Geometry, Polygon } from 'ol/geom';
+import { Geometry, LineString, MultiLineString, Polygon } from 'ol/geom';
 
 // LIBRERIA TURF //
-import { booleanIntersects, featureCollection, union } from '@turf/turf';
+import { booleanIntersects, featureCollection, lineSplit, polygonize, polygonToLine, union, lineString, lineStrings } from '@turf/turf';
 
 
 // LIBRERIA OL-EXT //
@@ -70,15 +70,18 @@ export class MapComponent implements OnInit, AfterViewInit {
   public controlBar!: InstanceType<typeof Bar>;
   public subControlBar!: InstanceType<typeof Bar>;
     // Pintar
-  public polygonAnterior!: Polygon;
-  private featureAnterior!: Feature;
   private drawnVectorSource!:VectorSource;
   public drawVectorLayer!: VectorLayer; // La capa donde se van a mostrar
+  public polygonAnterior!: Polygon;
+  private featureAnterior!: Feature;
   private isDrawing: boolean = false;
   public draw!:Draw; // Interaccion que permite pintar
   private drawnFeatureAtPixel!: any[]
   private polIndex: number = 0;
   private drawInteraction!: Draw;
+  private featureUno!: Feature<Geometry>;
+  private featureDos!: Feature<Geometry>;
+
     // Eliminar Poligono
   private estadosTocadosArray: Array<Feature>= []
   private borradoPoligono: boolean = false;
@@ -92,6 +95,8 @@ export class MapComponent implements OnInit, AfterViewInit {
   private featureSeleccionada!: Feature<Geometry>;
   private transformado: boolean = false;
     // Cortar
+  private lineVectorSource!: VectorSource;
+  public lineVectorLayer!: VectorLayer;
   private cutInteraction!: Draw;
   
   
@@ -258,6 +263,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     
       this.map.on('click', (e) => {
         if(!this.isDrawing){
+          // console.log('Features en drawnVectorSource',this.drawnVectorSource.getFeatures());
           // console.log('Click habilitado:',!this.isDrawing)
           // console.log('Interactions added:',this.map.getInteractions().forEach((item)=>item.getN === 'Draw')
 
@@ -269,19 +275,38 @@ export class MapComponent implements OnInit, AfterViewInit {
 
           console.log('Nombre del Feature Seleccionado pixel:',this.drawnFeatureAtPixel[0]?.get('name'));// Con interrogacion la indicamos que puede haber o no para que no falle.
           console.log('Filtro por capa drawnFeatureAtPixel:',this.drawnFeatureAtPixel);
-          console.log('AllFeatures at pixel',features[0]!.get('geometry').getCoordinates());
+          console.log('AllFeatures at pixel',features);
 
-          // const olFeature = features[0];
-          // const usTurfFeature = new GeoJSON().writeFeatureObject(olFeature);
+          // Formato GEOJson de OpenLayers
+          const formatGJ = new GeoJSON();
+          // Coger la primera feature del array (la de mas arriba)
+          const olFeature = features[0];
+          // Convertir la feature de OL a GeoJSON compatible con Turf
+          const usTurfFeature = formatGJ.writeFeatureObject(olFeature,{
+            featureProjection: this.map.getView().getProjection(),
+            dataProjection: 'EPSG:4326'
+          });
+
+          // Convertir la feature de OL a GeoJSON compatible con Turf
+          const drawnTurfFeature = formatGJ.writeFeatureObject(olFeature,{
+            featureProjection: this.map.getView().getProjection(),
+            dataProjection: 'EPSG:4326'
+          });
+
+          // todo: turf poligon union test
+
+          //const miPol = new Polygon(olFeature.getGeometry().getCoordinates());
+          
           
           // const drawnTurfFeature = new GeoJSON().writeFeatureObject(this.drawnFeatureAtPixel[0]!);
 
-          // console.log('turfPolygon',turfPolygon.getCoordinates());
-          // console.log('turfPolygon GeoJson',usTurfPolygonGeoJSON);
+          console.log('ol-Polygon',olFeature,features[0].getGeometry() as Polygon);
+          console.log('turf-Polygon GeoJson',usTurfFeature);
+          //console.log('ol-Polygon miPol',miPol);
 
           // const formatGJ = new GeoJSON();
       
-          // // GeoJSON del polígono dibujado (en lon/lat EPSG:4326) — compatible con Turf
+          // GeoJSON del polígono dibujado (en lon/lat EPSG:4326) — compatible con Turf
           // const drawnGeoJSON = formatGJ.writeFeatureObject(this.drawnFeatureAtPixel[0]!, { // estoy cogiendo el numero 0 tengo que mandar el clickado arriba en on click
           //   featureProjection: this.map.getView().getProjection(),
           //   dataProjection: 'EPSG:4326'
@@ -371,9 +396,6 @@ export class MapComponent implements OnInit, AfterViewInit {
               this.estadosTocados(polygonClicado);
             }
             
-            
-            
-            
           }else {this.subControlBar.setVisible(false)}// Si se clica fuera de un Feature dibujado se deshabilita boton borrado/compare
 
           // console.log('Desde map - state code: ',features[0].get("ste_stusps_code"));
@@ -388,30 +410,6 @@ export class MapComponent implements OnInit, AfterViewInit {
           // console.log(features[0].get('ste_area_code'));
           // console.log(features[0].get('ste_code'));
           // console.log('origStyle:' + features[0].get('__originalStyle'));
-          
-          // // Seleccion de estado y cambio de color 
-          // // Se comprueba si el feature ya esta seleccionado
-          // // Se almacena el estilo original en una propiedad del feature
-
-          // Seguir aqui!!!!!!! con esto solo estoy cogiendo 
-          // el feature clickado tengo que coger todos los features del mapa // Todas las features en el pixel clickado
-          
-          //  this.usSource.getFeatures().forEach((feature)=>{ 
-
-          //   let original = feature.get('__originalStyle');
-
-          //   // console.log('Entrado en if de comprobacion de estilo color rosa',feature.getStyle() === styleArray[0].rosa)
-          //   if(feature.getStyle() === styleArray[0].rosa){
-          //     console.log('Entrado en if de comprobacion de estilo color rosa')
-          //     feature.setStyle(original);
-          //     feature.set('selected', false);
-          //   } else{
-          //     feature.setStyle(styleArray[0].rosa); // aplicar estilo de seleccionado
-          //     feature.set('selected', true);
-          //      // marcar como seleccionado
-          //   }
-            
-          // })
 
           const feature = features[0] as Feature;
           let original = feature.get('__originalStyle');
@@ -427,17 +425,8 @@ export class MapComponent implements OnInit, AfterViewInit {
           } else{
             feature.setStyle(styleArray[0].rosa); // aplicar estilo de seleccionado
             feature.set('selected', true); // marcar como seleccionado
-
-            // // Buscar el estado emitido
-            // // const stateData = this.statesInfo.find(state => state.state === feature.get('ste_stusps_code'));
-            // // Buscar en indice en el array
-            // const index = this.statesInfo.findIndex(state => state.state === feature.get('ste_stusps_code'));
-            // // Cambiar estado del selected para que aparezca o no el checkbox
-            // this.statesInfo[index].selected = this.statesInfo[index].selected ? false : true ;
-            //console.log('MAP-STATES-INFO: ',this.statesInfo);
-            
           }
-
+          // NO LO USO, USO LOS ESTADOS EN EL SELECT DE CADA FEATURE PARA EL CONTROL DE SI ESTAN SELECCIONADOS
         //////////////////////////////////////////////////////
           // Cambiado el valor de selected
           // Buscar en indice en el array
@@ -447,32 +436,12 @@ export class MapComponent implements OnInit, AfterViewInit {
           if (index !== -1) {
             this.statesInfo[index].selected = this.statesInfo[index].selected ? false : true ;
           }
-        //////////////////////////////////////////////////////
-
-          // const isSelected:boolean = feature.get('selected');// === true; // undefined === false
-          // // console.log('Desde Map - Selected ' + features[0].get('selected'));
-          // // console.log('Selected' + features[0].get('__selected'));
-          // if (!isSelected) {
-          //   // Se almacena el estilo original en la propiedad del feature
-          //   //feature.set('__originalStyle', feature.getStyle());
-          //   feature.setStyle(styleArray[0].rosa); // aplicar estilo de seleccionado
-          //   feature.set('selected', true); // marcar como seleccionado
-          // } else {
-          //   // reset del estilo al original
-          //   // original = feature.get('__originalStyle');
-          //   feature.setStyle(original);
-          //   feature.set('selected', false);
-          // }
-          // console.log('Desde Map - Selected ' + features[0].get('selected'));
-          //console.log('Get All Layers:   ',this.map.getAllLayers())
-          // console.log('MAP-STATES-INFO: ',this.statesInfo);
+        /////////////////////////////////////////////////////
         }
       
       });
-      
-    // Resetear estilos de los estados //
-    // Lo llamo para que el subscribe este activo y escuche los cambios
-    this.resetStyles()
+
+    
     
     // Subscribe que hace que se resetee el estilo de un estado
     this._covidData.resetStyle$.subscribe(({value:activated,codigo:state_code, selected:select})=>{
@@ -507,6 +476,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
 
     ///////// BOTONES///////////
+
     // Capa para los dibujos //
     // VectorSource va a almacenar los Features en formato GeoJSON
     this.drawnVectorSource = new VectorSource<Feature<Geometry>>({
@@ -515,12 +485,24 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Esta capa tipo VectorLayer su Source va a mostrar los Features dibujados
     this.drawVectorLayer = new VectorLayer({
       source: this.drawnVectorSource,
-      style: styleArray[0].polygon,
       visible: true,
       zIndex: 2
     })
     // Aniadimos la VectorLayer al mapa
     this.map.addLayer(this.drawVectorLayer)
+
+    // Capa para la linea de corte //
+    // VectorSource que va a almacenar los Features de tipo LineString
+    this.lineVectorSource = new VectorSource<Feature<LineString>>({
+      format: new GeoJSON
+    });
+    // Esta capa tipo VectorLayer su VectorSource va a mostrar las Lineas dibujadas
+    this.lineVectorLayer = new VectorLayer({
+      source: this.lineVectorSource!,
+      visible: true,
+      zIndex: 99999
+    })
+    this.map.addLayer(this.lineVectorLayer);
 
     ///////// Barra de control del Mapa ///////////
     this.controlBar = new Bar({
@@ -531,11 +513,11 @@ export class MapComponent implements OnInit, AfterViewInit {
     })
 
     this.drawInteraction = new Draw({
-                    type: 'Polygon',
-                    source: this.drawVectorLayer.getSource()!,
-                    style: styleArray[0].polygon
-                    // geometryName: 'pol_'+this.drawnVectorSource.getFeatures().length
-                  })
+      type: 'Polygon',
+      source: this.drawVectorLayer.getSource()!,
+      style: styleArray[0].polygon
+      // geometryName: 'pol_'+this.drawnVectorSource.getFeatures().length
+    })
         // Botton Pintar Poligono
         // const drawInteraction = arrayInteractions[0].draw
     const drawPolygon = new Toggle({
@@ -557,7 +539,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       e.feature.set('__originalStyle', styleArray[0].polygon);
       console.log('Dibujado Draw:', e);
     })
-
+    // Aniadir toggle a barra principal.
     this.controlBar.addControl(drawPolygon)
 
       // Interaccion Modify
@@ -640,33 +622,114 @@ export class MapComponent implements OnInit, AfterViewInit {
     //   console.log('Traslación:', e);
     // });
     this.controlBar.addControl(transformPolygon)
-      
+
+    // this.lineVectorLayer.setSource(this.lineVectorSource);
       // Interaccion dibujar Linea
     this.cutInteraction = new Draw({
       type: 'LineString',
-      source: this.drawVectorLayer.getSource()!,
+      source: this.lineVectorSource,
       style: styleArray[0].line
-              
     })
-      // Boton Cortar
+      // Boton Cortar poligonos con linea
     const cutPolygon = new Toggle({
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scissors-icon lucide-scissors"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>',
       className: 'ctrl-button',
-      title: 'Transform',
+      title: 'Cut Polygon',
       interaction: this.cutInteraction,
       active:false,
       onToggle:(active:any)=>{
         this.subControlBar.setVisible(false);
-        this.isDrawing = active
+        this.isDrawing = active;
+        if(!active){
+          console.log('Entrando En Toggle');
+          // console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures().length);
+          if(this.drawnVectorSource.getFeatures().length > 0){
+            console.log('Entrando En Toggle Si hay features');
+            const features = this.lineVectorSource.getFeatures();
+            const matchFeature = features.find(feature=>feature.get('name') === 'lineaDeCorte');
+            console.log(matchFeature);
+            console.log(this.lineVectorSource.getFeatures());
+            if(matchFeature){this.cortarPoligonos(matchFeature);}
+          }
+        }
       }
    
     });
+    this.cutInteraction.on('drawend',(e:any)=>{
+      console.log('Linea para cortar poligonos dibujada:', e.feature);
+      const lineaDeCorte = e.feature as Feature<LineString>;
+      // lineaDeCorte.setStyle(styleArray[0].line);
+      lineaDeCorte.set('name','lineaDeCorte');
+      // console.log('Linea de corte:', lineaDeCorte);
+      //console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures());
+      // Llamar funcion cortar poligonos
+      // this.cortarPoligonos(e.feature);
+      // this.isDrawing = false;
+    })
     // Aniadir a la barra pricipal
     this.controlBar.addControl(cutPolygon);
 
+    // // Boton cortar poligonos entre ellos
+    // const cutPolygonsBetween = new Toggle({
+    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-subtract-icon lucide-squares-subtract"><path d="M10 22a2 2 0 0 1-2-2"/><path d="M16 22h-2"/><path d="M16 4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-5a2 2 0 0 1 2-2h5a1 1 0 0 0 1-1z"/><path d="M20 8a2 2 0 0 1 2 2"/><path d="M22 14v2"/><path d="M22 20a2 2 0 0 1-2 2"/></svg>',
+    //   className: 'ctrl-button',
+    //   title: 'Substract Polygons',
+    //   interaction: this.drawInteraction,
+    //   active:false,
+    //   onToggle:(active:any)=>{
+    //     this.subControlBar.setVisible(false);
+    //     this.isDrawing = active
+    //   }
+    // });
+    // // Aniadir a la barra pricipal
+    // this.controlBar.addControl(cutPolygonsBetween);
 
+    // // Boton unir poligonos entre ellos
+    // const unitePolygonsBetween = new Toggle({
+    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-unite-icon lucide-squares-unite"><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 0 1 1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3a1 1 0 0 0-1-1z"/></svg>',
+    //   className: 'ctrl-button',
+    //   title: 'Unite Polygons',
+    //   interaction: this.drawInteraction,
+    //   active:false,
+    //   onToggle:(active:any)=>{
+    //     this.subControlBar.setVisible(false);
+    //     this.isDrawing = active
+    //   }
+    // });
+    // // Aniadir a la barra pricipal
+    // this.controlBar.addControl(unitePolygonsBetween);
+
+    // // Boton extraer parte de poligonos entre ellos el segundo sustrae del primero
+    // const excludePolygonsBetween = new Toggle({
+    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-exclude-icon lucide-squares-exclude"><path d="M16 12v2a2 2 0 0 1-2 2H9a1 1 0 0 0-1 1v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h0"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2v2"/></svg>',
+    //   className: 'ctrl-button',
+    //   title: 'Substract part of Polygon',
+    //   interaction: this.drawInteraction,
+    //   active:false,
+    //   onToggle:(active:any)=>{
+    //     this.subControlBar.setVisible(false);
+    //     this.isDrawing = active
+    //   }
+    // });
+    // // Aniadir a la barra pricipal
+    // this.controlBar.addControl(excludePolygonsBetween);
+
+    // // Boton cargar archivo GeoJSON
+    // const fileUpload = new Toggle({
+    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus-corner-icon lucide-file-plus-corner"><path d="M11.35 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M14 19h6"/><path d="M17 16v6"/></svg>',
+    //   className: 'ctrl-button',
+    //   title: 'Upload GEOJson File',
+    //   interaction: this.drawInteraction,
+    //   active:false,
+    //   onToggle:(active:any)=>{
+    //     this.subControlBar.setVisible(false);
+    //     this.isDrawing = active
+    //   }
+    // });
+    // // Aniadir a la barra pricipal
+    // this.controlBar.addControl(fileUpload);
     
-    // Barra de submenu
+    // BARRA DE SUBMENU DE SELCCION DE POLIGONO //
     this.subControlBar = new Bar({
       className: 'sub-toolbar',
       toggleOne: true,
@@ -758,7 +821,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Aniadir barra de control
     this.map.addControl(this.controlBar)
 
-
+    // Resetear estilos de los estados //
+    // Lo llamo para que el subscribe este activo y escuche los cambios
+    this.resetStyles()
     
     
 
@@ -790,8 +855,9 @@ export class MapComponent implements OnInit, AfterViewInit {
         
         this.isDrawing = false; 
       }
-      this.subControlBar.setVisible(false);
+      
     })
+    this.subControlBar.setVisible(false);
     
     // throw new Error('Method not implemented.');
   }
@@ -995,6 +1061,129 @@ export class MapComponent implements OnInit, AfterViewInit {
     // this.subControlBar.setVisible(false);
   }
 
+  cortarPoligonos(line:Feature){
+    console.log('Metodo cortarPoligonos: Recibe linea de corte', line);
+    console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures()[0]);
+    
+    // Formato GeoJSON para OL
+    const formatGJ = new GeoJSON();
+
+    // const cuttingLine = line.getGeometry() as LineString;
+
+    // GeoJSON de la linea dibujada (en lon/lat EPSG:4326) — compatible con Turf
+    const lineGeoJSON = formatGJ.writeFeatureObject(line,{
+      featureProjection: this.map.getView().getProjection(),
+      dataProjection: 'EPSG:4326'
+    });
+
+    // Recorrer los poligonos dibujados para comprobar interseccion y cortar
+    this.drawnVectorSource.getFeatures()!.forEach((feature:Feature)=>{
+      // convertir la feature del polígono a GeoJSON en EPSG:4326 para Turf
+      const polygonGeoJSON = formatGJ.writeFeatureObject(feature, {
+        featureProjection: this.map.getView().getProjection(),
+        dataProjection: 'EPSG:4326'
+      });
+
+      try {
+        if (booleanIntersects(lineGeoJSON as any, polygonGeoJSON as any)) {
+          console.log('Cortar polígono:', feature.get('name'));
+
+          // const featureToPolygon = polygonize(lineGeoJSON as any);
+          // console.log('Feature to Poligon',featureToPolygon);
+          // Convertir El poligono a LineString para poder cortarlo
+          const polygonToLines = polygonToLine(polygonGeoJSON as any);
+          console.log('Poligon to Line:',polygonToLines);
+
+          // Usar turf para cortar el polígono con la línea
+          const featuresCortadas = lineSplit(polygonToLines as any, lineGeoJSON as any);
+          console.log('Polígonos resultantes del corte:', featuresCortadas);
+          // console.log('Geometria:',featuresCortadas.features[0].geometry);
+          // let geometria = featuresCortadas.features[0].geometry;
+          // let cood = geometria.coodinates;
+
+          // Meto al ultimo poligono su
+          console.log(featuresCortadas.features[2].geometry.coordinates[0],featuresCortadas.features[2].geometry.coordinates[3]);
+          let coord1 = featuresCortadas.features[2].geometry.coordinates[0];
+          // let coord2 = featuresCortadas.features[2].geometry.coordinates[3];
+          featuresCortadas.features[2].geometry.coordinates.push(coord1);
+          // console.log(featuresCortadas.features[2].geometry);
+
+          // let line = new lineString(
+          //   [
+          //     [coord1.lon, coord1.lat],
+          //     [coord2.lon, coord2.lat]
+          //   ],
+          //   {name:'Linea1'}
+          // );
+
+          // Paso los features a polygonize
+          console.log('Features sin puntos y con puntos',featuresCortadas.features,...featuresCortadas.features);
+          let poligonoUno = featureCollection([featuresCortadas.features[2],featuresCortadas.features[1],featuresCortadas.features[0]]);
+
+          // Coger las lineas del primer polígono resultante y crear un nuevo polígono
+          // const lineasUno = featuresCortadas.features[1];
+          // console.log('Lineas del poligono Uno:',lineasUno)
+          // Crear nuevo polígono a partir de las lineas
+          const newPolygons = polygonize(poligonoUno);
+          console.log('Nuevos polígonos tras corte:', newPolygons);
+
+          // const newFeature2 = formatGJ.readFeature(lineasUno, {
+          //     featureProjection: this.map.getView().getProjection(),
+          //     dataProjection: 'EPSG:4326'
+          //   });
+
+          // console.log('Feature creado tras corte:', newFeature2 as Feature<Geometry>);
+
+          // Eliminar el polígono original del source
+          this.drawnVectorSource.removeFeature(feature);
+
+          
+
+          // // Pruebas para ver si los puedo pintar en el mapa
+          // const newFeature1 = formatGJ.readFeature(featuresCortadas.features[0], {
+          //     featureProjection: this.map.getView().getProjection(),
+          //     dataProjection: 'EPSG:4326'
+          //   });
+          // const newFeature2 = formatGJ.readFeature(featuresCortadas.features[1], {
+          //     featureProjection: this.map.getView().getProjection(),
+          //     dataProjection: 'EPSG:4326'
+          //   });
+          //   const newFeature3 = formatGJ.readFeature(featuresCortadas.features[2], {
+          //     featureProjection: this.map.getView().getProjection(),
+          //     dataProjection: 'EPSG:4326'
+          //   });
+          
+          // console.log('Features creados tras corte:', newFeature1 as Feature<Geometry>, newFeature2, newFeature3);
+          // // newFeature1.getGeometry();
+
+          // this.drawnVectorSource.addFeature(newFeature1 as Feature<Geometry>);
+          // this.drawnVectorSource.addFeature(newFeature2 as Feature<Geometry>);
+          // this.drawnVectorSource.addFeature(newFeature3 as Feature<Geometry>);
+
+          // this.drawnVectorSource.refresh();
+
+          // console.log('Features en drawnVectorSource tras corte:', this.drawnVectorSource.getFeatures());
+
+          // Añadir los nuevos polígonos resultantes al source
+          newPolygons.features.forEach((poly: any) => {
+            const newFeature = formatGJ.readFeature(poly, {
+              featureProjection: this.map.getView().getProjection(),
+              dataProjection: 'EPSG:4326'
+            });
+            console.log('Polygonos ? Features:',poly,newFeature);
+            // // Guardar estilo original
+            // newFeature.set('__originalStyle', styleArray[0].polygon);
+            // newFeature.setStyle(styleArray[0].polygon);
+            this.drawnVectorSource.addFeature(newFeature as Feature<Geometry>);
+          });
+        }
+      } catch (err) {
+          console.warn('Intersection test failed', err);
+      }
+    });
+    this.isDrawing = false;
+  }
+
   // drawPoligon(drawInteraction:any){
   //   // Al clickar boton activamos la interaccion
   //   // const drawInteraction = arrayInteractions[0].draw
@@ -1105,9 +1294,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   //   // this.map.getView().animate({center: fromLonLat([lon,lat])}, {zoom: 5})
   // }
 
-  search($event:any){
-    this.statesInfo;
-  }
+  
 
   // // Yo tenia esto que me instale tambien ol-ext
   // mapControls: Bar = new Bar({

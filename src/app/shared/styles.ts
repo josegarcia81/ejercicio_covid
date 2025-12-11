@@ -52,7 +52,7 @@ const rosaPolygon = new Style({
 // Estilo del relleno del Feature Linea
 const line = new Style({
     stroke: new Stroke({
-    color:[255, 106, 106, 0.8],
+    color:[0, 0, 0, 0.8],
     width: 5
     })
 })
