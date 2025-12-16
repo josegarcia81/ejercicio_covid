@@ -49,6 +49,7 @@ import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
 import Polygonizer from 'jsts/org/locationtech/jts/operation/polygonize/Polygonizer';
 import UnaryUnionOp from 'jsts/org/locationtech/jts/operation/union/UnaryUnionOp';
 import UnionOp from 'jsts/org/locationtech/jts/operation/union/UnionOp.js';
+import  OverlayOp  from 'jsts/org/locationtech/jts/operation/overlay/OverlayOp';
 
 
 // LIBRERIA OL-EXT //
@@ -63,6 +64,7 @@ import { CovidData } from '../models/CovidData.model';
 import { StateInfo } from '../models/StateInfo.model';
 import { findIndex } from 'rxjs';
 import ArrayList from 'jsts/java/util/ArrayList';
+import { style } from '@angular/animations';
 
 
 @Component({
@@ -129,7 +131,8 @@ export class MapComponent implements OnInit, AfterViewInit {
   private lineVectorSource!: VectorSource;
   public lineVectorLayer!: VectorLayer;
   private cutInteraction!: Draw;
-  
+    // Cortar con Poligono
+  private cutWithPolygon!: Draw;
   
   public bluePolygon: any;
   
@@ -517,7 +520,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.drawVectorLayer = new VectorLayer({
       source: this.drawnVectorSource,
       visible: true,
-      zIndex: 2
+      zIndex: 2,
+      style: styleArray[0].polygon
     })
     // Aniadimos la VectorLayer al mapa
     this.map.addLayer(this.drawVectorLayer)
@@ -531,7 +535,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.lineVectorLayer = new VectorLayer({
       source: this.lineVectorSource!,
       visible: true,
-      zIndex: 99999
+      zIndex: 99999,
+      style: styleArray[0].line
     })
     this.map.addLayer(this.lineVectorLayer);
 
@@ -555,17 +560,26 @@ export class MapComponent implements OnInit, AfterViewInit {
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil-line-icon lucide-pencil-line"><path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>',
       className: 'ctrl-button',
       title: 'Draw',
-      interaction: this.drawInteraction,
+      // interaction: this.drawInteraction,
       active:false,
       onToggle: (active:boolean)=>{
         this.isDrawing = active
         this.subControlBar.setVisible(false)
         // this.polIndex++;
         // console.log('Toggle:',this.isDrawing)
+        if(active){
+          this.map.addInteraction(this.drawInteraction);
+          console.log('Activando interaction');
+        }else{
+          this.map.removeInteraction(this.drawInteraction);
+          console.log('Desactivando interaction',this.map.getInteractions());
+          
+        }
       }
     })
     this.drawInteraction.on('drawend',(e:any)=>{
       e.feature.set('name','pol_'+this.polIndex);
+      e.feature.set('id',this.polIndex);
       this.polIndex++;
       e.feature.set('__originalStyle', styleArray[0].polygon);
       console.log('Dibujado Draw:', e);
@@ -681,11 +695,18 @@ export class MapComponent implements OnInit, AfterViewInit {
             console.log(lineaCorte);
             //console.log(this.lineVectorSource.getFeatures());
             // const poligono = this.drawnVectorSource.getFeatures()[this.drawnVectorSource.getFeatures().length];
-            const poligono = this.drawnVectorSource.getFeatures()[0];
-            console.log(poligono);
-            if(lineaCorte){this.cortarPoligonosJSTS(lineaCorte, poligono);}
+            if(!!lineaCorte){
+              const extent = lineaCorte.getGeometry()!.getExtent();
+              const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
+                console.log('Poligono intersecta',feature.get('name'));
+                return feature;
+              }) || new Feature;
+              this.cortarPoligonosJSTS(lineaCorte,featureTocada)
+            }
+            // if(lineaCorte){;}
           }
         }
+        this.lineVectorSource.clear();
       }
    
     });
@@ -703,50 +724,118 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Aniadir a la barra pricipal
     this.controlBar.addControl(cutPolygon);
 
-    // // Boton cortar poligonos entre ellos
-    // const cutPolygonsBetween = new Toggle({
-    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-subtract-icon lucide-squares-subtract"><path d="M10 22a2 2 0 0 1-2-2"/><path d="M16 22h-2"/><path d="M16 4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-5a2 2 0 0 1 2-2h5a1 1 0 0 0 1-1z"/><path d="M20 8a2 2 0 0 1 2 2"/><path d="M22 14v2"/><path d="M22 20a2 2 0 0 1-2 2"/></svg>',
-    //   className: 'ctrl-button',
-    //   title: 'Substract Polygons',
-    //   interaction: this.drawInteraction,
-    //   active:false,
-    //   onToggle:(active:any)=>{
-    //     this.subControlBar.setVisible(false);
-    //     this.isDrawing = active
-    //   }
-    // });
-    // // Aniadir a la barra pricipal
-    // this.controlBar.addControl(cutPolygonsBetween);
+    // Interaccion dibujar poligono
+    this.cutWithPolygon = new Draw({
+      type: 'Polygon',
+      source: this.drawnVectorSource,
+      style: styleArray[0].polygon
+    })
 
-    // // Boton unir poligonos entre ellos
-    // const unitePolygonsBetween = new Toggle({
-    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-unite-icon lucide-squares-unite"><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 0 1 1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3a1 1 0 0 0-1-1z"/></svg>',
-    //   className: 'ctrl-button',
-    //   title: 'Unite Polygons',
-    //   interaction: this.drawInteraction,
-    //   active:false,
-    //   onToggle:(active:any)=>{
-    //     this.subControlBar.setVisible(false);
-    //     this.isDrawing = active
-    //   }
-    // });
-    // // Aniadir a la barra pricipal
-    // this.controlBar.addControl(unitePolygonsBetween);
+    // Boton cortar poligonos entre ellos
+    const cutPolygonsBetween = new Toggle({
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-subtract-icon lucide-squares-subtract"><path d="M10 22a2 2 0 0 1-2-2"/><path d="M16 22h-2"/><path d="M16 4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-5a2 2 0 0 1 2-2h5a1 1 0 0 0 1-1z"/><path d="M20 8a2 2 0 0 1 2 2"/><path d="M22 14v2"/><path d="M22 20a2 2 0 0 1-2 2"/></svg>',
+      className: 'ctrl-button',
+      title: 'Substract Polygons',
+      
+      active:false,
+      onToggle:(active:any)=>{
+        
+        if(active){
+          this.subControlBar.setVisible(false);
+          this.isDrawing = active;
+          this.map.addInteraction(this.drawInteraction);
+          console.log('Activando interaction pintar');
+        }else{
+          this.map.removeInteraction(this.drawInteraction);
+          console.log('Desactivando interaction',this.map.getInteractions());
 
-    // // Boton extraer parte de poligonos entre ellos el segundo sustrae del primero
-    // const excludePolygonsBetween = new Toggle({
-    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-exclude-icon lucide-squares-exclude"><path d="M16 12v2a2 2 0 0 1-2 2H9a1 1 0 0 0-1 1v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h0"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2v2"/></svg>',
-    //   className: 'ctrl-button',
-    //   title: 'Substract part of Polygon',
-    //   interaction: this.drawInteraction,
-    //   active:false,
-    //   onToggle:(active:any)=>{
-    //     this.subControlBar.setVisible(false);
-    //     this.isDrawing = active
-    //   }
-    // });
-    // // Aniadir a la barra pricipal
-    // this.controlBar.addControl(excludePolygonsBetween);
+          let index = this.drawnVectorSource.getFeatures().length -1;
+          console.log('Index of drwanFeature:',index)
+          const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
+
+          const extent = lastFeature.getGeometry()!.getExtent();
+
+          const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
+                console.log('Poligono intersecta',feature.get('name'));
+                return feature;
+              }) || new Feature;
+          console.log('FeatureTocada corte por poligonos:',featureTocada);
+          this.cortarPoligonoConPoligono(featureTocada,lastFeature);
+        }
+
+
+      }
+    });
+    // Aniadir a la barra pricipal
+    this.controlBar.addControl(cutPolygonsBetween);
+
+    // Boton unir poligonos entre ellos
+    const unitePolygonsBetween = new Toggle({
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-unite-icon lucide-squares-unite"><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 0 1 1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3a1 1 0 0 0-1-1z"/></svg>',
+      className: 'ctrl-button',
+      title: 'Unite Polygons',
+      active:false,
+      onToggle:(active:any)=>{
+        if(active){
+          this.subControlBar.setVisible(false);
+          this.isDrawing = active;
+          this.map.addInteraction(this.drawInteraction);
+          console.log('Activando interaction pintar');
+        }else{
+          this.map.removeInteraction(this.drawInteraction);
+          console.log('Desactivando interaction pintar',this.map.getInteractions());
+
+          let index = this.drawnVectorSource.getFeatures().length -1;
+          console.log('Index of drwanFeature:',index)
+          const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
+
+          const extent = lastFeature.getGeometry()!.getExtent();
+
+          const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
+                console.log('Poligono intersecta',feature.get('name'));
+                return feature;
+              }) || new Feature;
+          console.log('FeatureTocada corte por poligonos:',featureTocada);
+          this.unirPoligonoConPoligono(featureTocada,lastFeature);
+        }
+      }
+    });
+    // Aniadir a la barra pricipal
+    this.controlBar.addControl(unitePolygonsBetween);
+
+    // Boton extraer parte de poligonos entre ellos el segundo sustrae del primero
+    const excludePolygonsBetween = new Toggle({
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-exclude-icon lucide-squares-exclude"><path d="M16 12v2a2 2 0 0 1-2 2H9a1 1 0 0 0-1 1v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h0"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2v2"/></svg>',
+      className: 'ctrl-button',
+      title: 'Substract part of Polygon',
+      active:false,
+      onToggle:(active:any)=>{
+        if(active){
+          this.subControlBar.setVisible(false);
+          this.isDrawing = active;
+          this.map.addInteraction(this.drawInteraction);
+          console.log('Activando interaction pintar');
+        }else{
+          this.map.removeInteraction(this.drawInteraction);
+          console.log('Desactivando interaction',this.map.getInteractions());
+
+          let index = this.drawnVectorSource.getFeatures().length -1;
+          console.log('Index of drwanFeature:',index)
+          const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
+
+          const extent = lastFeature.getGeometry()!.getExtent();
+
+          const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
+                console.log('Poligono intersecta',feature.get('name'));
+                return feature;
+              }) || new Feature;
+          console.log('FeatureTocada corte por poligonos:',featureTocada);
+          this.cortarPoligonoConPoligono(featureTocada,lastFeature);
+        }
+      }
+    });
+    // Aniadir a la barra pricipal
+    this.controlBar.addControl(excludePolygonsBetween);
 
     // // Boton cargar archivo GeoJSON
     // const fileUpload = new Toggle({
@@ -1060,9 +1149,10 @@ export class MapComponent implements OnInit, AfterViewInit {
                   //////////////////// this.drawnFeatureAtPixel[0].set('selected', false);
                 }
               })
-            }
+              this.subControlBar.setVisible(false);
+          }
           
-         }else{ // TODO: SEGUIR AQUI, sI NO INTERSECTA PONER LOS ESTADOS EN COLOR ORIGINAL Y DESSELECCIONAR DEL NAV-BAR = FALSE
+         }else{ // SEGUIR AQUI, sI NO INTERSECTA PONER LOS ESTADOS EN COLOR ORIGINAL Y DESSELECCIONAR DEL NAV-BAR = FALSE
 
           feature.setStyle(feature.get('__originalStyle')); // reset al original
           feature.set('selected', false);
@@ -1291,24 +1381,13 @@ export class MapComponent implements OnInit, AfterViewInit {
   //   this.isDrawing = false;
   // }
 
-  cortarPoligonosJSTS(linea:any,poligono:any){
+  cortarPoligonosJSTS(linea: any, poligono: any){
     console.log('Metodo cortarPoligonosJSTS',linea,poligono);
-
-    const extent = linea.getGeometry().getExtent();
-    Seguir aqui
-    const featureTocada = this.drawnVectorSource.forEachFeatureInExtent(extent,(feature)=>{
-      console.log('Poligono intersecta',feature.get('name'));
-      
-    }) || undefined;
-
-    // if (poligono.intersectsExtent(linea.getExtent)){
-    //   console.log('Poligono intersecta',poligono.get('id'))
-
-    // }
-
-
+    
+    // Factoria de geometrias y parses para convertir ol<-->jsts features
     let geomFactory = new GeometryFactory;
     const parser = new (OL3Parser as any)(geomFactory);
+    // Inyeccion para las geometrias convertibles
     parser.inject(
         Point,
         LineString,
@@ -1321,31 +1400,46 @@ export class MapComponent implements OnInit, AfterViewInit {
       );
 
     // Parsear las geometrias a jsts
-    let polGeometry = parser.read(featureTocada!.getGeometry());
+    let polGeometry = parser.read(poligono!.getGeometry());
     let lineGeometry = parser.read(linea.getGeometry());
     console.log('JSTS polGeometry',polGeometry);
     console.log('JSTS lineGeometry',lineGeometry);
+
+    if(polGeometry === undefined){
+      this.lineVectorSource.removeFeature(linea);
+      console.log('No intersecta ningun feature')
+      return
+    }
+
+    // Quitando las orejas
+    let insideLine = lineGeometry.intersection(polGeometry);
+    insideLine.buffer(10);
+    console.log('lineas intersect',insideLine);
 
     // Coger el perimetro de poligono
     let bordePoligono = polGeometry.getBoundary();
 
     // unir perimetro a linea y forzar union nodal
     // bordePoligono.Union
-    let perimeters = bordePoligono.union(lineGeometry);
-    let nodedPerimeter = UnaryUnionOp.union(perimeters);
+    let perimeters = bordePoligono.union(insideLine);
+    let nodalPerimeter = UnaryUnionOp.union(perimeters);
     console.log('JSTS Geometry',polGeometry);
 
-    // Convertir a poligonos, tiene que devolver 2
+    // Intento de hacer la diferencia entre el perimetro nuevo incluido linea y el anterior solo del poligono
+    let finalPerimeter = OverlayOp.difference(nodalPerimeter,bordePoligono);
+    
+    // Convertir a poligonos, tiene que devolver 2 o mas
     let polygonizer = new Polygonizer();
-    polygonizer.add(nodedPerimeter);
+    polygonizer.add(nodalPerimeter);
 
     // Cogemos poligonos del poligonizer, es un ArrayList con los metodos de Java
     const polygons = polygonizer.getPolygons();
-
-    if(polygons.size() == 2){
+    console.log('Poligonos generados', polygons)
+    // Si se generan 2 o mas poligonos
+    if(polygons.size() >= 2){
 
       this.drawnVectorSource.removeFeature(poligono);
-
+      // Iterator para recorrer los nuevos poligonos
       let itPolygon = polygons.iterator();
       while (itPolygon.hasNext()){
 
@@ -1353,18 +1447,120 @@ export class MapComponent implements OnInit, AfterViewInit {
         // Convertir poligono de jsts a Ol
         const olPol = parser.write(jstsPol);
 
-        let newpolygon = new Feature({
-          geometry: olPol
-
+        let newPolygon = new Feature({
+          geometry: olPol,
+          style: styleArray[0].polygon
         })
-
-        this.drawnVectorSource.addFeature(newpolygon);
+        newPolygon.set('__originalStyle',styleArray[0].polygon);
+        newPolygon.set('selected', false);
+        this.drawnVectorSource.addFeature(newPolygon);
       }
 
-
     }
+    this.lineVectorSource.removeFeature(linea);
+  }
+
+  cortarPoligonoConPoligono(pol1:any, pol2:any){
+    console.log('Metodo cortarPoligonoConPoligono',pol1,pol2);
+    
+    // Factoria de geometrias y parses para convertir ol<-->jsts features
+    let geomFactory = new GeometryFactory;
+    const parser = new (OL3Parser as any)(geomFactory);
+    // Inyeccion para las geometrias convertibles
+    parser.inject(
+        Point,
+        LineString,
+        LinearRing,
+        Polygon,
+        MultiPoint,
+        MultiLineString,
+        MultiPolygon,
+        GeometryCollection
+      );
+
+    // Parsear las geometrias a jsts
+    let pol1Geometry = parser.read(pol1!.getGeometry());
+    let pol2Geometry = parser.read(pol2!.getGeometry());
+    console.log('JSTS polGeometry',pol1Geometry);
+    console.log('JSTS lineGeometry',pol2Geometry);
+
+    // Aniadir un if para ver si se cortan por el perimetro
+    let cortan = pol1Geometry.intersection(pol2Geometry);
+    if(cortan){
+      let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
+
+      let olPol = parser.write(resultPol);
+
+      let resultFeature = new Feature({
+        geometry: olPol,
+        style: styleArray[0].polygon
+      })
+      resultFeature.set('__originalStyle',styleArray[0].polygon);
+      this.drawnVectorSource.addFeature(resultFeature);
+      
+      this.drawnVectorSource.removeFeature(pol1);
+      this.drawnVectorSource.removeFeature(pol2);
+    }else{
+
+      let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
+
+      let olPol = parser.write(resultPol);
+
+      let resultFeature = new Feature({
+        geometry: olPol,
+        style: styleArray[0].polygon
+      })
+      resultFeature.set('__originalStyle',styleArray[0].polygon);
+      this.drawnVectorSource.addFeature(resultFeature);
+      
+      this.drawnVectorSource.removeFeature(pol1);
+      this.drawnVectorSource.removeFeature(pol2);
+    }
+  }
+
+  unirPoligonoConPoligono(pol1:any, pol2:any){
+
+    console.log('Metodo cortarPoligonoConPoligono',pol1,pol2);
+    
+    // Factoria de geometrias y parses para convertir ol<-->jsts features
+    let geomFactory = new GeometryFactory;
+    const parser = new (OL3Parser as any)(geomFactory);
+    // Inyeccion para las geometrias convertibles
+    parser.inject(
+        Point,
+        LineString,
+        LinearRing,
+        Polygon,
+        MultiPoint,
+        MultiLineString,
+        MultiPolygon,
+        GeometryCollection
+      );
+
+    // Parsear las geometrias a jsts
+    let pol1Geometry = parser.read(pol1!.getGeometry());
+    let pol2Geometry = parser.read(pol2!.getGeometry());
+    console.log('JSTS polGeometry',pol1Geometry);
+    console.log('JSTS lineGeometry',pol2Geometry);
+
+    let resultPol = OverlayOp.union(pol1Geometry, pol2Geometry);
+
+    let olPol = parser.write(resultPol);
+
+    let resultFeature = new Feature({
+      geometry: olPol,
+      style: styleArray[0].polygon
+    })
+    resultFeature.set('__originalStyle',styleArray[0].polygon);
+    this.drawnVectorSource.addFeature(resultFeature);
+    
+    this.drawnVectorSource.removeFeature(pol1);
+    this.drawnVectorSource.removeFeature(pol2);
 
   }
+
+
+
 
   // drawPoligon(drawInteraction:any){
   //   // Al clickar boton activamos la interaccion
