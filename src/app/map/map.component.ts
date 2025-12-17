@@ -127,7 +127,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   private transformInteraction!: typeof Transform;
   private featureSeleccionada!: Feature<Geometry>;
   private transformado: boolean = false;
-    // Cortar
+    // Cortar con linea
   private lineVectorSource!: VectorSource;
   public lineVectorLayer!: VectorLayer;
   private cutInteraction!: Draw;
@@ -310,11 +310,12 @@ export class MapComponent implements OnInit, AfterViewInit {
           console.log('Nombre del Feature Seleccionado pixel:',this.drawnFeatureAtPixel[0]?.get('name'));// Con interrogacion la indicamos que puede haber o no para que no falle.
           console.log('Filtro por capa drawnFeatureAtPixel:',this.drawnFeatureAtPixel);
           console.log('AllFeatures at pixel',features);
+          console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures());
 
           // Si hay features dibujados en el pixel clickado
           if(this.drawnFeatureAtPixel.length > 0 ){
             this.subControlBar.setVisible(true); // Si se clica un Feature dibujado se habilita boton borrado/compare
-            delPoligon.setActive(false); // Activar boton borrar poligono
+            delPoligon.setActive(false); // Desactivar boton borrar poligono Para que funcione bien el borrado
 
             this.selected = this.drawnFeatureAtPixel[0].get('selected') ? false : true;
             console.log('Valor de selected del poldibujado',this.selected) // marcar como seleccionado ? false : true;
@@ -596,8 +597,11 @@ export class MapComponent implements OnInit, AfterViewInit {
           console.log('Feature seleccionada:', this.featureSeleccionada);
           
         }
-        this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon);
-        this.subControlBar.setVisible(true);
+        // if(this.featureSeleccionada.get('selected')){
+        // this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon);
+        // }
+        // this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon);
+        // this.subControlBar.setVisible(true);
       }
     });
     // Usar para volver a reseleccionar estados
@@ -606,6 +610,9 @@ export class MapComponent implements OnInit, AfterViewInit {
       
       let feature = e.features.item(0);
       console.log('Modificada Transformacion:', e, feature);
+      if(this.featureSeleccionada.get('selected')){
+        this.estadosTocados(this.featureSeleccionada.getGeometry() as Polygon);
+      }
       // this.estadosTocados(feature.getGeometry() as Polygon);
       
     });
@@ -710,9 +717,11 @@ export class MapComponent implements OnInit, AfterViewInit {
           const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
                 console.log('Poligono intersecta',feature.get('name'));
                 return feature;
-              }) || new Feature;
+              }) || null;
           console.log('FeatureTocada corte por poligonos:',featureTocada);
-          this.cortarPoligonoConPoligono(featureTocada,lastFeature,'substract');
+          if (featureTocada?.get('name') !== lastFeature.get('name')){
+            this.cortarPoligonoConPoligono(featureTocada,lastFeature, 'substract');
+          }
         }
 
 
@@ -748,7 +757,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
                 console.log('Poligono intersecta',feature.get('name'));
                 return feature;
-              }) || new Feature;
+              }) || null;
           console.log('FeatureTocada corte por poligonos:',featureTocada);
           this.unirPoligonoConPoligono(featureTocada,lastFeature);
         }
@@ -784,9 +793,13 @@ export class MapComponent implements OnInit, AfterViewInit {
           const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
                 console.log('Poligono intersecta',feature.get('name'));
                 return feature;
-              }) || new Feature;
+              }) || null;
           console.log('FeatureTocada corte por poligonos:',featureTocada);
-          this.cortarPoligonoConPoligono(featureTocada,lastFeature, 'exclude');
+          if (featureTocada?.get('name') !== lastFeature.get('name')){
+            this.cortarPoligonoConPoligono(featureTocada,lastFeature, 'exclude');
+          }else{
+            alert('Es el mismo poligono o no intersecta ningun poligono!!!')
+          }
         }
       }
     });
@@ -1337,6 +1350,12 @@ export class MapComponent implements OnInit, AfterViewInit {
   //   this.isDrawing = false;
   // }
 
+  /**
+   * Description placeholder
+   *
+   * @param {*} linea 
+   * @param {*} poligono 
+   */
   cortarPoligonosConLinea(linea: any, poligono: any){
     console.log('Metodo cortarPoligonosJSTS',linea,poligono);
     
@@ -1416,8 +1435,20 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.lineVectorSource.removeFeature(linea);
   }
 
+  /**
+   * Description placeholder
+   *
+   * @param {*} pol1 
+   * @param {*} pol2 
+   * @param {string} tool 
+   */
   cortarPoligonoConPoligono(pol1:any, pol2:any, tool:string){
     console.log('Metodo cortarPoligonoConPoligono',pol1,pol2);
+    // Controls por si solo se ha dibujado un poligono y no se reciba dos veces el mismo.
+    // if(pol2.get('name') === 'pol_0'){
+    //   alert('solo hay un poligon');
+    //   return
+    // }
     
     // Factoria de geometrias y parses para convertir ol<-->jsts features
     let geomFactory = new GeometryFactory;
@@ -1437,42 +1468,59 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Parsear las geometrias a jsts
     let pol1Geometry = parser.read(pol1!.getGeometry());
     let pol2Geometry = parser.read(pol2!.getGeometry());
-    console.log('JSTS polGeometry',pol1Geometry);
-    console.log('JSTS lineGeometry',pol2Geometry);
+    console.log('JSTS polGeometry-1',pol1Geometry);
+    console.log('JSTS polGeometry-2',pol2Geometry);
 
     let bordePoligono1 = pol1Geometry.getBoundary();
+    console.log('Borde-Pol1',bordePoligono1);
     let bordePoligono2 = pol2Geometry.getBoundary();
+    console.log('Borde-Pol2',bordePoligono2);
     // Aniadir un if para ver si se cortan por el perimetro
 
     let cortan = bordePoligono2.intersects(bordePoligono1);
     if(cortan && tool === 'substract'){
-      console.log('SI se cortan');
+      console.log('SI se cortan - SUBSTRACT');
       let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
       // let resultPol = OverlayOp.symDifference(pol1Geometry, pol2Geometry);
       let olPol = parser.write(resultPol);
       // Revisar porque crea multipolygon y necesito tipo polygon
-      console.log('Ver resultado Multipolygon', resultPol);
+      
+      
       let resultFeature = new Feature({
         geometry: olPol,
-        style: styleArray[0].polygon
+        style: styleArray[0].polygon,
+        name: 'Pol_'+ this.polIndex
       })
+      this.polIndex++
       resultFeature.set('__originalStyle',styleArray[0].polygon);
+      resultFeature.set('selected',false);
       this.drawnVectorSource.addFeature(resultFeature);
       
       this.drawnVectorSource.removeFeature(pol1);
       this.drawnVectorSource.removeFeature(pol2);
     }else if(cortan && tool === 'exclude'){
-      console.log('SI se cortan');
+      console.log('SI se cortan - EXCLUDE');
       //let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
       let resultPol = OverlayOp.symDifference(pol1Geometry, pol2Geometry);
       let olPol = parser.write(resultPol);
+      console.log('Ver resultado Multipolygon JSTS, OpenLayers', resultPol, olPol);
 
-      let resultFeature = new Feature({
-        geometry: olPol,
-        style: styleArray[0].polygon
+      const newPolygons = olPol.getPolygons();
+      console.log('newPolygons OL',newPolygons)
+      // Recorrer el array y crear features
+      
+      newPolygons.forEach((pol:any)=>{
+        
+        let resultFeature = new Feature({
+          geometry: pol,
+          style: styleArray[0].polygon,
+          name: 'Pol_'+ this.polIndex
+        })
+        this.polIndex++
+        resultFeature.set('__originalStyle',styleArray[0].polygon);
+        resultFeature.set('selected',false);
+        this.drawnVectorSource.addFeature(resultFeature);
       })
-      resultFeature.set('__originalStyle',styleArray[0].polygon);
-      this.drawnVectorSource.addFeature(resultFeature);
       
       this.drawnVectorSource.removeFeature(pol1);
       this.drawnVectorSource.removeFeature(pol2);
@@ -1484,9 +1532,13 @@ export class MapComponent implements OnInit, AfterViewInit {
 
       let resultFeature = new Feature({
         geometry: olPol,
-        style: styleArray[0].polygon
-      })
+        style: styleArray[0].polygon,
+        name: 'Pol_'+ this.polIndex
+        })
+      this.polIndex++
+    
       resultFeature.set('__originalStyle',styleArray[0].polygon);
+      resultFeature.set('selected',false);
       this.drawnVectorSource.addFeature(resultFeature);
       
       this.drawnVectorSource.removeFeature(pol1);
@@ -1494,9 +1546,20 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
   }
 
+  /**
+   * Description placeholder
+   *
+   * @param {*} pol1 
+   * @param {*} pol2 
+   */
   unirPoligonoConPoligono(pol1:any, pol2:any){
 
-    console.log('Metodo cortarPoligonoConPoligono',pol1,pol2);
+    console.log('Metodo unirPoligonoConPoligono',pol1,pol2);
+
+    if(pol1 === null || pol2 === null){
+      alert('No hay poligonos que unir')
+      return
+    }
     
     // Factoria de geometrias y parses para convertir ol<-->jsts features
     let geomFactory = new GeometryFactory;
@@ -1524,10 +1587,14 @@ export class MapComponent implements OnInit, AfterViewInit {
     let olPol = parser.write(resultPol);
 
     let resultFeature = new Feature({
-      geometry: olPol,
-      style: styleArray[0].polygon
+      geometry: olPol as Polygon,
+      style: styleArray[0].polygon,
+      name: 'Pol_'+ this.polIndex
     })
+    this.polIndex++
+  
     resultFeature.set('__originalStyle',styleArray[0].polygon);
+    resultFeature.set('selected',false);
     this.drawnVectorSource.addFeature(resultFeature);
     
     this.drawnVectorSource.removeFeature(pol1);
