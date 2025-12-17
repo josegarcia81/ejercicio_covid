@@ -311,56 +311,6 @@ export class MapComponent implements OnInit, AfterViewInit {
           console.log('Filtro por capa drawnFeatureAtPixel:',this.drawnFeatureAtPixel);
           console.log('AllFeatures at pixel',features);
 
-          // Formato GEOJson de OpenLayers
-          const formatGJ = new GeoJSON();
-          // Coger la primera feature del array (la de mas arriba)
-          const olFeature = features[0];
-          // Convertir la feature de OL a GeoJSON compatible con Turf
-          const usTurfFeature = formatGJ.writeFeatureObject(olFeature,{
-            featureProjection: this.map.getView().getProjection(),
-            dataProjection: 'EPSG:4326'
-          });
-
-          // Convertir la feature de OL a GeoJSON compatible con Turf
-          const drawnTurfFeature = formatGJ.writeFeatureObject(olFeature,{
-            featureProjection: this.map.getView().getProjection(),
-            dataProjection: 'EPSG:4326'
-          });
-
-          // todo: turf poligon union test
-
-          //const miPol = new Polygon(olFeature.getGeometry().getCoordinates());
-          
-          
-          // const drawnTurfFeature = new GeoJSON().writeFeatureObject(this.drawnFeatureAtPixel[0]!);
-
-          console.log('ol-Polygon',olFeature,features[0].getGeometry() as Polygon);
-          console.log('turf-Polygon GeoJson',usTurfFeature);
-          //console.log('ol-Polygon miPol',miPol);
-
-          // const formatGJ = new GeoJSON();
-      
-          // GeoJSON del polígono dibujado (en lon/lat EPSG:4326) — compatible con Turf
-          // const drawnGeoJSON = formatGJ.writeFeatureObject(this.drawnFeatureAtPixel[0]!, { // estoy cogiendo el numero 0 tengo que mandar el clickado arriba en on click
-          //   featureProjection: this.map.getView().getProjection(),
-          //   dataProjection: 'EPSG:4326'
-          // });
-
-          // // convertir la feature del estado a GeoJSON en EPSG:4326 para Turf
-          // const stateGeoJSON = formatGJ.writeFeatureObject(features[0], {
-          //   featureProjection: this.map.getView().getProjection(),
-          //   dataProjection: 'EPSG:4326'
-          // });
-
-          // const unionPolygon = union(featureCollection([drawnGeoJSON.geometry as any, stateGeoJSON.geometry as any]));
-          // const newPolygon = new Feature({
-          //   geometry: formatGJ.readGeometry(unionPolygon!.geometry),
-          // })
-          // console.log('Union Polygon Turf:',unionPolygon!.geometry);
-          // console.log('New Polygon OL:',newPolygon.getGeometry());
-
-          // this.drawnVectorSource.addFeature(newPolygon);
-
           // Si hay features dibujados en el pixel clickado
           if(this.drawnFeatureAtPixel.length > 0 ){
             this.subControlBar.setVisible(true); // Si se clica un Feature dibujado se habilita boton borrado/compare
@@ -613,7 +563,9 @@ export class MapComponent implements OnInit, AfterViewInit {
       // this.modificado = true;
       let feature = e.features.item(0);
       console.log('Modificada Modify:', e, feature);
-      this.estadosTocados(feature.getGeometry() as Polygon);
+      if(feature.get('selected')){
+        this.estadosTocados(feature.getGeometry() as Polygon);
+      }
       // this.estadosTocados(feature.getGeometry() as Polygon);
     })
     // Aniadir toggle a barra principal.
@@ -701,7 +653,7 @@ export class MapComponent implements OnInit, AfterViewInit {
                 console.log('Poligono intersecta',feature.get('name'));
                 return feature;
               }) || new Feature;
-              this.cortarPoligonosJSTS(lineaCorte,featureTocada)
+              this.cortarPoligonosConLinea(lineaCorte,featureTocada)
             }
             // if(lineaCorte){;}
           }
@@ -736,10 +688,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-subtract-icon lucide-squares-subtract"><path d="M10 22a2 2 0 0 1-2-2"/><path d="M16 22h-2"/><path d="M16 4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-5a2 2 0 0 1 2-2h5a1 1 0 0 0 1-1z"/><path d="M20 8a2 2 0 0 1 2 2"/><path d="M22 14v2"/><path d="M22 20a2 2 0 0 1-2 2"/></svg>',
       className: 'ctrl-button',
       title: 'Substract Polygons',
-      
       active:false,
       onToggle:(active:any)=>{
-        
+        this.subControlBar.setVisible(false);
+        this.isDrawing = active;
         if(active){
           this.subControlBar.setVisible(false);
           this.isDrawing = active;
@@ -760,7 +712,7 @@ export class MapComponent implements OnInit, AfterViewInit {
                 return feature;
               }) || new Feature;
           console.log('FeatureTocada corte por poligonos:',featureTocada);
-          this.cortarPoligonoConPoligono(featureTocada,lastFeature);
+          this.cortarPoligonoConPoligono(featureTocada,lastFeature,'substract');
         }
 
 
@@ -776,9 +728,11 @@ export class MapComponent implements OnInit, AfterViewInit {
       title: 'Unite Polygons',
       active:false,
       onToggle:(active:any)=>{
+        this.subControlBar.setVisible(false);
+        this.isDrawing = active;
         if(active){
-          this.subControlBar.setVisible(false);
-          this.isDrawing = active;
+          // this.subControlBar.setVisible(false);
+          // this.isDrawing = active;
           this.map.addInteraction(this.drawInteraction);
           console.log('Activando interaction pintar');
         }else{
@@ -810,9 +764,11 @@ export class MapComponent implements OnInit, AfterViewInit {
       title: 'Substract part of Polygon',
       active:false,
       onToggle:(active:any)=>{
+        this.subControlBar.setVisible(false);
+        this.isDrawing = active;
         if(active){
-          this.subControlBar.setVisible(false);
-          this.isDrawing = active;
+          // this.subControlBar.setVisible(false);
+          // this.isDrawing = active;
           this.map.addInteraction(this.drawInteraction);
           console.log('Activando interaction pintar');
         }else{
@@ -830,7 +786,7 @@ export class MapComponent implements OnInit, AfterViewInit {
                 return feature;
               }) || new Feature;
           console.log('FeatureTocada corte por poligonos:',featureTocada);
-          this.cortarPoligonoConPoligono(featureTocada,lastFeature);
+          this.cortarPoligonoConPoligono(featureTocada,lastFeature, 'exclude');
         }
       }
     });
@@ -1087,7 +1043,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       const formatGJ = new GeoJSON();
       
       // GeoJSON del polígono dibujado (en lon/lat EPSG:4326) — compatible con Turf
-      const drawnGeoJSON = formatGJ.writeFeatureObject(this.drawnFeatureAtPixel[0]!, { // estoy cogiendo el numero 0 tengo que mandar el clickado arriba en on click
+      const drawnGeoJSON = formatGJ.writeFeatureObject(this.drawnFeatureAtPixel[0]! as Feature, { // estoy cogiendo el numero 0 tengo que mandar el clickado arriba en on click
         featureProjection: this.map.getView().getProjection(),
         dataProjection: 'EPSG:4326'
       });
@@ -1107,7 +1063,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           // Va haciendo un foreach y con el match intento ver si el feature ya esta en el array
           i++;
           // const matchedState = this.usSource.getFeatures().find((feature: any) => feature.get('ste_name').toString() === stateName) as Feature
-          console.log(this.estadosTocadosArray);
+          // console.log(this.estadosTocadosArray);
           
           //Si hay coincidencia, coge el feature que viene del source usSource y lo inserta al array
           this.estadosTocadosArray.push(feature);
@@ -1125,7 +1081,7 @@ export class MapComponent implements OnInit, AfterViewInit {
               if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
                 // Avisamos del cambio de estado al servicio
                 // 
-                console.log('ESTA ENTRANDO AQUI');
+                // console.log('ESTA ENTRANDO AQUI');
                 state.selected = false;
                 // console.log(state.selected);
               }
@@ -1143,7 +1099,7 @@ export class MapComponent implements OnInit, AfterViewInit {
                 if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
                   // Avisamos del cambio de estado al servicio
                   //this._covidData.setSelectedState(state.state,);
-                  console.log('ESTA ENTRANDO AQUI');
+                  // console.log('ESTA ENTRANDO AQUI');
                   // state.selected = false;
                   // Revisar esto   //console.log(state.selected);
                   //////////////////// this.drawnFeatureAtPixel[0].set('selected', false);
@@ -1164,9 +1120,9 @@ export class MapComponent implements OnInit, AfterViewInit {
             if(state.name === feature.get('ste_name').toString()){ // Aqui habia problema de comparacion porque uno era array y otro string
               // Avisamos del cambio de estado al servicio
               //this._covidData.setSelectedState(state.state)
-              console.log('ESTA ENTRANDO AQUI METODO NO INTERSECT')
+              // console.log('ESTA ENTRANDO AQUI METODO NO INTERSECT')
               state.selected = false;
-              console.log(state.selected);
+              // console.log(state.selected);
             }
           })
         }
@@ -1178,10 +1134,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       
       
     })
-    console.log('Estados Tocados:', this.estadosTocadosArray)
+    // console.log('Estados Tocados:', this.estadosTocadosArray)
     this.modificado = false;
     this.transformado = false;
-    console.log('Cantidad de veces true intersects',i)
+    // console.log('Cantidad de veces true intersects',i)
     // this.subControlBar.setVisible(false);
   }
 
@@ -1381,7 +1337,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   //   this.isDrawing = false;
   // }
 
-  cortarPoligonosJSTS(linea: any, poligono: any){
+  cortarPoligonosConLinea(linea: any, poligono: any){
     console.log('Metodo cortarPoligonosJSTS',linea,poligono);
     
     // Factoria de geometrias y parses para convertir ol<-->jsts features
@@ -1460,7 +1416,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.lineVectorSource.removeFeature(linea);
   }
 
-  cortarPoligonoConPoligono(pol1:any, pol2:any){
+  cortarPoligonoConPoligono(pol1:any, pol2:any, tool:string){
     console.log('Metodo cortarPoligonoConPoligono',pol1,pol2);
     
     // Factoria de geometrias y parses para convertir ol<-->jsts features
@@ -1484,11 +1440,31 @@ export class MapComponent implements OnInit, AfterViewInit {
     console.log('JSTS polGeometry',pol1Geometry);
     console.log('JSTS lineGeometry',pol2Geometry);
 
+    let bordePoligono1 = pol1Geometry.getBoundary();
+    let bordePoligono2 = pol2Geometry.getBoundary();
     // Aniadir un if para ver si se cortan por el perimetro
-    let cortan = pol1Geometry.intersection(pol2Geometry);
-    if(cortan){
-      let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
 
+    let cortan = bordePoligono2.intersects(bordePoligono1);
+    if(cortan && tool === 'substract'){
+      console.log('SI se cortan');
+      let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
+      // let resultPol = OverlayOp.symDifference(pol1Geometry, pol2Geometry);
+      let olPol = parser.write(resultPol);
+      // Revisar porque crea multipolygon y necesito tipo polygon
+      console.log('Ver resultado Multipolygon', resultPol);
+      let resultFeature = new Feature({
+        geometry: olPol,
+        style: styleArray[0].polygon
+      })
+      resultFeature.set('__originalStyle',styleArray[0].polygon);
+      this.drawnVectorSource.addFeature(resultFeature);
+      
+      this.drawnVectorSource.removeFeature(pol1);
+      this.drawnVectorSource.removeFeature(pol2);
+    }else if(cortan && tool === 'exclude'){
+      console.log('SI se cortan');
+      //let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
+      let resultPol = OverlayOp.symDifference(pol1Geometry, pol2Geometry);
       let olPol = parser.write(resultPol);
 
       let resultFeature = new Feature({
@@ -1501,7 +1477,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.drawnVectorSource.removeFeature(pol1);
       this.drawnVectorSource.removeFeature(pol2);
     }else{
-
+      console.log('NO se cortan');
       let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
 
       let olPol = parser.write(resultPol);

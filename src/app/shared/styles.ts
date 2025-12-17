@@ -1,64 +1,58 @@
 // Estilos de los Features del mapa
 
-import Fill from "ol/style/Fill";
-import Stroke from "ol/style/Stroke";
-import Style from "ol/style/Style";
+import {Fill, Stroke, Style, Circle}  from "ol/style";
+
+/////////// COMUNES ///////////
+const blueFill = new Fill({color:[78, 191, 255, 0.58]});
+const greenFill = new Fill({color:[123, 226, 98, 0.8]});
+const yellowFill = new Fill({color:[234, 229, 77, 0.8]});
+const redFill = new Fill({color:[234, 77, 77, 0.8]});
+const rosaFill = new Fill({color:[245, 40, 145, 0.8]});
+
+const blueStroke = new Stroke({color: [39, 88, 245, 0.8],
+                               width: 1,});
+const blackStroke = new Stroke({color:[0, 0, 0, 0.8],
+                                width: 1});
+const bluePoint = new Circle({
+                    fill: new Fill({
+                        color:[78, 191, 255, 0.58]
+                        }),
+                    radius: 5
+                })
 
 /////////// POLIGONOS ///////////
-
 // Estilo del relleno de los Feature poligon state por defecto
 const polygon = new Style({
-    fill: new Fill({
-    color:[78, 191, 255, 0.58]
-    }),
-    stroke: new Stroke({
-        color: [39, 88, 245, 0.8],
-        width: 1
-    })
+    fill: blueFill,
+    stroke: blueStroke,
+    image: bluePoint
 })
-// Estilo del relleno de los Feature poligon state
-// Lineas de limitacion de estados
-const linde = new Stroke ({
-    color:[0, 0, 0, 0.8],
-    width: 1
-})
-
+// Estilo del relleno de los Feature poligon state por casos covid
 const greenPolygon = new Style({
-    fill: new Fill({
-    color:[123, 226, 98, 0.8]
-    }),
-    stroke: linde
+    fill: greenFill,
+    stroke: blackStroke
 })
 
 const yellowPolygon = new Style({
-    fill: new Fill({
-    color:[234, 229, 77, 0.8]
-    }),
-    stroke: linde
+    fill: yellowFill,
+    stroke: blackStroke
 })
 
 const redPolygon = new Style({
-    fill: new Fill({
-    color:[234, 77, 77, 0.8]
-    }),
-    stroke: linde
+    fill: redFill,
+    stroke: blackStroke
 })
-// Rosa para destacar ciertos estados al ser seleccionados
+// Rosa para destacar estados al ser seleccionados
 const rosaPolygon = new Style({
-    fill: new Fill({
-    color:[245, 40, 145, 0.8]
-    }),
-    stroke: linde
+    fill: rosaFill,
+    stroke: blackStroke
 })
-
 
 //////// LINEAS ///////////
 // Estilo del relleno del Feature Linea
 const line = new Style({
-    stroke: new Stroke({
-        color: [39, 88, 245, 0.8],
-        width: 1
-    })
+    stroke: blueStroke,
+    image: bluePoint
 })
 
 //////// EXPORTACIONES ///////////
