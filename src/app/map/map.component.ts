@@ -4,6 +4,10 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewCh
 // VARIABLES COMUNES //
 import { styleArray } from '../shared/styles';
 
+// MODELOS //
+import { CovidData } from '../models/CovidData.model';
+import { StateInfo } from '../models/StateInfo.model';
+
 // SERVICIOS //
 import { CovidDataService } from '../services/covid-data.service';
 import { MapService } from '../services/map.service';
@@ -17,30 +21,12 @@ import Feature from 'ol/Feature';
 import Overlay from 'ol/Overlay';
 import { fromLonLat } from 'ol/proj';
 import { Geometry, GeometryCollection, LinearRing, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'ol/geom';
-// LIBRERIA GEOJSON
-import type {
-  Feature as GJFeature,
-  FeatureCollection as GJFeatureCollection,
-  LineString as GJLineString,
-  // Polygon as GJPolygon,
-  MultiLineString as GJMultiLineString
-} from 'geojson';
+import DragAndDrop from 'ol/interaction/DragAndDrop'
+import Draw from 'ol/interaction/Draw';
+import Modify from 'ol/interaction/Modify'
 
 // LIBRERIA TURF //
-import { booleanIntersects,
-    lineSplit,
-    polygonize,
-    polygonToLine,
-    lineString,
-    lineStrings,
-    truncate,
-    booleanWithin,
-    featureCollection,
-    intersect,
-    flatten,
-    area,
-    // polygon
-} from '@turf/turf';
+import { booleanIntersects } from '@turf/turf';
 
 // LIBRERIA JSTS
 import 'jsts/org/locationtech/jts/monkey.js'; // Soluciona el problema de ".union" function doesn`t exist
@@ -48,24 +34,13 @@ import OL3Parser from 'jsts/org/locationtech/jts/io/OL3Parser'
 import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
 import Polygonizer from 'jsts/org/locationtech/jts/operation/polygonize/Polygonizer';
 import UnaryUnionOp from 'jsts/org/locationtech/jts/operation/union/UnaryUnionOp';
-import UnionOp from 'jsts/org/locationtech/jts/operation/union/UnionOp.js';
+// import UnionOp from 'jsts/org/locationtech/jts/operation/union/UnionOp.js';
 import  OverlayOp  from 'jsts/org/locationtech/jts/operation/overlay/OverlayOp';
-
 
 // LIBRERIA OL-EXT //
 import Toggle from 'ol-ext/control/Toggle';
 import Bar from 'ol-ext/control/Bar';
-import Draw from 'ol/interaction/Draw';
-import Modify from 'ol/interaction/Modify'
 import  Transform  from 'ol-ext/interaction/Transform';
-
-// MODELOS //
-import { CovidData } from '../models/CovidData.model';
-import { StateInfo } from '../models/StateInfo.model';
-import { findIndex } from 'rxjs';
-import ArrayList from 'jsts/java/util/ArrayList';
-import { style } from '@angular/animations';
-
 
 @Component({
   selector: 'app-map',
@@ -133,6 +108,12 @@ export class MapComponent implements OnInit, AfterViewInit {
   private cutInteraction!: Draw;
     // Cortar con Poligono
   private cutWithPolygon!: Draw;
+    // Aniadir archivo a source
+  private fileVectorSource!: VectorSource;
+  private fileVectorLayer!: VectorLayer; 
+  private dragAndDropInteraction!: DragAndDrop;
+  private fileUpload: boolean = false;
+
   
   public bluePolygon: any;
   
@@ -486,7 +467,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.lineVectorLayer = new VectorLayer({
       source: this.lineVectorSource!,
       visible: true,
-      zIndex: 99999,
+      zIndex: 4,
       style: styleArray[0].line
     })
     this.map.addLayer(this.lineVectorLayer);
@@ -627,7 +608,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     // });
     this.controlBar.addControl(transformPolygon)
 
-    // this.lineVectorLayer.setSource(this.lineVectorSource);
       // Interaccion dibujar Linea
     this.cutInteraction = new Draw({
       type: 'LineString',
@@ -715,14 +695,15 @@ export class MapComponent implements OnInit, AfterViewInit {
 
           const extent = lastFeature.getGeometry()!.getExtent();
 
-          const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
-                console.log('Poligono intersecta',feature.get('name'));
-                return feature;
+          this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
+            console.log('Poligono intersecta',feature.get('name'));
+            console.log('FeatureTocada corte por poligonos:',feature);
+            if (feature?.get('name') !== lastFeature.get('name')){
+              this.cortarPoligonoConPoligono(feature,lastFeature, 'substract');
+            }
+                // return feature;
               }) || null;
-          console.log('FeatureTocada corte por poligonos:',featureTocada);
-          if (featureTocada?.get('name') !== lastFeature.get('name')){
-            this.cortarPoligonoConPoligono(featureTocada,lastFeature, 'substract');
-          }
+          
         }
 
 
@@ -807,20 +788,42 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Aniadir a la barra pricipal
     this.controlBar.addControl(excludePolygonsBetween);
 
-    // // Boton cargar archivo GeoJSON
-    // const fileUpload = new Toggle({
-    //   html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus-corner-icon lucide-file-plus-corner"><path d="M11.35 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M14 19h6"/><path d="M17 16v6"/></svg>',
-    //   className: 'ctrl-button',
-    //   title: 'Upload GEOJson File',
-    //   interaction: this.drawInteraction,
-    //   active:false,
-    //   onToggle:(active:any)=>{
-    //     this.subControlBar.setVisible(false);
-    //     this.isDrawing = active
-    //   }
-    // });
-    // // Aniadir a la barra pricipal
-    // this.controlBar.addControl(fileUpload);
+    // Esta capa va a albergar los features del archivo
+    this.fileVectorSource = new VectorSource({
+      format: new GeoJSON
+    })
+
+    this.fileVectorLayer = new VectorLayer({
+      source: this.fileVectorSource,
+      visible: true,
+      zIndex:5,
+      style: styleArray[0].line
+    })
+    this.map.addLayer(this.fileVectorLayer);
+
+
+    this.dragAndDropInteraction = new DragAndDrop({
+      formatConstructors: [GeoJSON],
+      source: this.fileVectorSource
+
+    });
+
+    // Boton cargar archivo GeoJSON
+    const fileUpload = new Toggle({
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-plus-corner-icon lucide-file-plus-corner"><path d="M11.35 22H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5.35"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M14 19h6"/><path d="M17 16v6"/></svg>',
+      className: 'ctrl-button',
+      title: 'Upload GEOJson File',
+      interaction: this.dragAndDropInteraction,
+      active:false,
+      onToggle:(active:any)=>{
+        this.subControlBar.setVisible(false);
+        this.isDrawing = active
+        this.fileUpload = true;
+      }
+    });
+
+    // Aniadir a la barra pricipal
+    this.controlBar.addControl(fileUpload);
     
     // BARRA DE SUBMENU DE SELCCION DE POLIGONO //
     this.subControlBar = new Bar({
@@ -1406,7 +1409,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     // unir perimetro a linea y forzar union nodal
     // bordePoligono.Union
-    let perimeters = bordePoligono.union(lineGeometry);// poner insideLine para ver si quita las orejas del perimetro // o lineGeometry para meterle toda la linea
+    let perimeters = bordePoligono.union(insideLine);// poner insideLine para ver si quita las orejas del perimetro // o lineGeometry para meterle toda la linea
     let nodalPerimeter = UnaryUnionOp.union(perimeters);
     console.log('JSTS Geometry',polGeometry);
 
@@ -1418,7 +1421,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     polygonizer.add(nodalPerimeter);
 
     // Cogemos poligonos del poligonizer, es un ArrayList con los metodos de Java
-    const polygons = polygonizeHoles.getPolygons(); // "polygonizer" para feature sin huecos / "polygonizeHoles" para feature con huecos
+    const polygons = polygonizeHoles.getPolygons(); // "polygonizer" para feature sin huecos / "polygonizeHoles" para feature con huecos // Se podria mejorar con un if(holes.length>0)
     console.log('Poligonos generados', polygons)
     // Si se generan 2 o mas poligonos
     if(polygons.size() >= 2){
@@ -1472,6 +1475,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     //   return
     // }
     
+    
+
     // Factoria de geometrias y parses para convertir ol<-->jsts features
     let geomFactory = new GeometryFactory;
     const parser = new (OL3Parser as any)(geomFactory);
@@ -1488,15 +1493,18 @@ export class MapComponent implements OnInit, AfterViewInit {
       );
 
     // Parsear las geometrias a jsts
-    let pol1Geometry = parser.read(pol1!.getGeometry());
-    let pol2Geometry = parser.read(pol2!.getGeometry());
+    let pol1Geometry = parser.read(pol1!.getGeometry()).buffer(0);
+    let pol2Geometry = parser.read(pol2!.getGeometry()).buffer(0);
     console.log('JSTS polGeometry-1',pol1Geometry);
     console.log('JSTS polGeometry-2',pol2Geometry);
 
+    // Bordes de poligonos
     let bordePoligono1 = pol1Geometry.getBoundary();
     console.log('Borde-Pol1',bordePoligono1);
     let bordePoligono2 = pol2Geometry.getBoundary();
     console.log('Borde-Pol2',bordePoligono2);
+    // bordePoligono2 = pol2Geometry.buffer(0); // Para solucionar el problema de la forma de reloj de arena o pajarita // esto solo no funciona
+    // bordePoligono2 = UnaryUnionOp.union(bordePoligono2);// Para solucionar el problema de la forma de reloj de arena o pajarita
     // Aniadir un if para ver si se cortan por el perimetro
 
     let cortan = bordePoligono2.intersects(bordePoligono1);
@@ -1507,19 +1515,26 @@ export class MapComponent implements OnInit, AfterViewInit {
       let olPol = parser.write(resultPol);
       // Revisar porque crea multipolygon y necesito tipo polygon
       
+      const newPolygons = olPol.getPolygons();
+      console.log('newPolygons OL',newPolygons)
+      // Recorrer el array y crear features
       
-      let resultFeature = new Feature({
-        geometry: olPol,
-        style: styleArray[0].polygon,
-        name: 'Pol_'+ this.polIndex
+      newPolygons.forEach((pol:any)=>{
+        
+        let resultFeature = new Feature({
+          geometry: pol,
+          style: styleArray[0].polygon,
+          name: 'Pol_'+ this.polIndex
+        })
+        this.polIndex++
+        resultFeature.set('__originalStyle',styleArray[0].polygon);
+        resultFeature.set('selected',false);
+        this.drawnVectorSource.addFeature(resultFeature);
       })
-      this.polIndex++
-      resultFeature.set('__originalStyle',styleArray[0].polygon);
-      resultFeature.set('selected',false);
-      this.drawnVectorSource.addFeature(resultFeature);
       
       this.drawnVectorSource.removeFeature(pol1);
       this.drawnVectorSource.removeFeature(pol2);
+
     }else if(cortan && tool === 'exclude'){
       console.log('SI se cortan - EXCLUDE');
       //let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
@@ -1547,7 +1562,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       this.drawnVectorSource.removeFeature(pol1);
       this.drawnVectorSource.removeFeature(pol2);
     }else{
-      console.log('NO se cortan');
+      console.log('NO se cortan los bordes, es Interior');
       let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
 
       let olPol = parser.write(resultPol);
@@ -1599,8 +1614,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       );
 
     // Parsear las geometrias a jsts
-    let pol1Geometry = parser.read(pol1!.getGeometry());
-    let pol2Geometry = parser.read(pol2!.getGeometry());
+    let pol1Geometry = parser.read(pol1!.getGeometry()).buffer(0);
+    let pol2Geometry = parser.read(pol2!.getGeometry()).buffer(0);
     console.log('JSTS polGeometry',pol1Geometry);
     console.log('JSTS lineGeometry',pol2Geometry);
 
