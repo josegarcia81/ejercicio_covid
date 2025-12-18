@@ -656,11 +656,12 @@ export class MapComponent implements OnInit, AfterViewInit {
             // const poligono = this.drawnVectorSource.getFeatures()[this.drawnVectorSource.getFeatures().length];
             if(!!lineaCorte){
               const extent = lineaCorte.getGeometry()!.getExtent();
-              const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
+              this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
                 console.log('Poligono intersecta',feature.get('name'));
-                return feature;
-              }) || new Feature;
-              this.cortarPoligonosConLinea(lineaCorte,featureTocada)
+                this.cortarPoligonosConLinea(lineaCorte,feature)
+                // return feature;
+              }) || null;
+              
             }
             // if(lineaCorte){;}
           }
@@ -845,7 +846,7 @@ export class MapComponent implements OnInit, AfterViewInit {
           //this.disableDraw()
 
           console.log('drawnFeatureAtPixel: ',this.drawnFeatureAtPixel[0].get('name'));
-          console.log('EstadosTocados - selected - feature[0]', this.estadosTocadosArray[0].get('selected'));
+          // console.log('EstadosTocados - selected - feature[0]', this.estadosTocadosArray[0].get('selected'));
           const featureToDelete = this.drawnFeatureAtPixel.find(feature=>feature.get('name') === this.drawnFeatureAtPixel[0].get('name'));
           console.log('Feature to delete:',featureToDelete);
           if(featureToDelete){
@@ -1358,6 +1359,12 @@ export class MapComponent implements OnInit, AfterViewInit {
    */
   cortarPoligonosConLinea(linea: any, poligono: any){
     console.log('Metodo cortarPoligonosJSTS',linea,poligono);
+
+    if(poligono === null){
+      this.lineVectorSource.removeFeature(linea);
+      alert('No intersecta ningun feature')
+      return
+    }
     
     // Factoria de geometrias y parses para convertir ol<-->jsts features
     let geomFactory = new GeometryFactory;
@@ -1380,15 +1387,18 @@ export class MapComponent implements OnInit, AfterViewInit {
     console.log('JSTS polGeometry',polGeometry);
     console.log('JSTS lineGeometry',lineGeometry);
 
-    if(polGeometry === undefined){
-      this.lineVectorSource.removeFeature(linea);
-      console.log('No intersecta ningun feature')
-      return
-    }
+    ///////// Para cortar poligono con Agujeros /////////
+    //Perform union of Polygon and Line and use Polygonizer to split the polygon by line        
+    let holes = polGeometry._holes;
+    let union = polGeometry.getExteriorRing().union(lineGeometry);
+    let polygonizeHoles = new Polygonizer();
+
+    //Splitting polygon in two part        
+    polygonizeHoles.add(union);
 
     // Quitando las orejas
     let insideLine = lineGeometry.intersection(polGeometry);
-    insideLine.buffer(10);
+    // insideLine.buffer(10);
     console.log('lineas intersect',insideLine);
 
     // Coger el perimetro de poligono
@@ -1396,19 +1406,19 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     // unir perimetro a linea y forzar union nodal
     // bordePoligono.Union
-    let perimeters = bordePoligono.union(insideLine);
+    let perimeters = bordePoligono.union(lineGeometry);// poner insideLine para ver si quita las orejas del perimetro // o lineGeometry para meterle toda la linea
     let nodalPerimeter = UnaryUnionOp.union(perimeters);
     console.log('JSTS Geometry',polGeometry);
 
     // Intento de hacer la diferencia entre el perimetro nuevo incluido linea y el anterior solo del poligono
-    let finalPerimeter = OverlayOp.difference(nodalPerimeter,bordePoligono);
+    // let finalPerimeter = OverlayOp.difference(nodalPerimeter,bordePoligono);
     
     // Convertir a poligonos, tiene que devolver 2 o mas
     let polygonizer = new Polygonizer();
     polygonizer.add(nodalPerimeter);
 
     // Cogemos poligonos del poligonizer, es un ArrayList con los metodos de Java
-    const polygons = polygonizer.getPolygons();
+    const polygons = polygonizeHoles.getPolygons(); // "polygonizer" para feature sin huecos / "polygonizeHoles" para feature con huecos
     console.log('Poligonos generados', polygons)
     // Si se generan 2 o mas poligonos
     if(polygons.size() >= 2){
@@ -1417,15 +1427,27 @@ export class MapComponent implements OnInit, AfterViewInit {
       // Iterator para recorrer los nuevos poligonos
       let itPolygon = polygons.iterator();
       while (itPolygon.hasNext()){
+        let jstsPol = itPolygon.next() as any;
 
-        const jstsPol = itPolygon.next();
+        // Logic for splitting polygon with holes // https://geoknight.medium.com/split-a-polygon-with-holes-by-line-in-openlayers-3ad022a268f1 // info
+        holes.forEach((hole:any) => {
+            let arr = []
+            for (let i in hole.getCoordinates()){
+                arr.push([hole.getCoordinates()[i].x, hole.getCoordinates()[i].y])
+            }
+            hole = parser.read(new Polygon([arr]));
+            jstsPol = jstsPol.difference(hole);
+        });
+
         // Convertir poligono de jsts a Ol
         const olPol = parser.write(jstsPol);
 
         let newPolygon = new Feature({
           geometry: olPol,
-          style: styleArray[0].polygon
+          style: styleArray[0].polygon,
+          name:'Pol_'+ this.polIndex
         })
+        this.polIndex++
         newPolygon.set('__originalStyle',styleArray[0].polygon);
         newPolygon.set('selected', false);
         this.drawnVectorSource.addFeature(newPolygon);
@@ -1436,7 +1458,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Description placeholder
+   * Description Metodo para cortar poligonos, recibe un string para usar dos herramientas para cortar de diferente manera
    *
    * @param {*} pol1 
    * @param {*} pol2 
@@ -1547,7 +1569,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Description placeholder
+   * Description Metodo para unir Poligonos
    *
    * @param {*} pol1 
    * @param {*} pol2 

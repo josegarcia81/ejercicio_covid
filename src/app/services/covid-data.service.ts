@@ -48,6 +48,11 @@ export class CovidDataService {
     
   }
 
+  /**
+   * Description Peticion de datos a la API de covidTracking
+   *
+   * @returns {Observable<CovidData[]>} 
+   */
   getCovidData(): Observable<CovidData[]> {
     // Realiza la petición HTTP y mapea los datos al modelo CovidData
     return this._http
@@ -57,6 +62,11 @@ export class CovidDataService {
       );
   }
 
+  /**
+   * Description Peticion de datos a la API de covidTracking
+   *
+   * @returns {*} 
+   */
   getStatesInfo(){
     return this._http
       .get<any[]>(this.urlStatesInfo)// Se pone any[] porque no tenemos interfaz que lo capture, si creamos un interfaz para ello podemos definirlo hay
@@ -65,6 +75,12 @@ export class CovidDataService {
       );
   }
 
+  /**
+   * Description Metodo que recibe el codigo de estado y un booleano para emitir y cambiar valores en nav-bar
+   *
+   * @param {string} stateCode 
+   * @param {boolean} value 
+   */
   setSelectedState(stateCode: string, value: boolean){
     // El if es para no reemitir el mismo valor y evitar bucles interminables
     // if(this.selectedStateSubject.value === stateName){
@@ -75,22 +91,44 @@ export class CovidDataService {
     // console.log("NEXT")
   }
 
+  /**
+   * Description Metodo que envia un true para activar la comparacion de estados en nav-bar
+   *
+   * @param {boolean} activated 
+   */
   setCompare(activated: boolean){
     this.activateCompare.next(activated)
   }
 
+  /**
+   * Description Metodo que emite los valores necesarios para que desde el nav-bar se pueda cambiar el color del estado en map
+   *
+   * @param {boolean} activated 
+   * @param {string} estado_codigo 
+   * @param {boolean} select 
+   */
   setOriginalStyle(activated:boolean, estado_codigo: string, select: boolean){
 
     this.resetStyleSubject.next({value: activated, codigo: estado_codigo, selected: select}); // Si la clave valor se llaman igual como en este caso selected: selected se puede omitir y dejar solo un selected
     
   }
 
+  /**
+   * Description Metodo que tras comparar estados en nav-bar emite para resetear todos los colores de estados a su original en el map
+   *
+   * @param {boolean} activated 
+   */
   setOriginalStyles(activated:boolean){
 
     this.resetStylesSubject.next(activated);
     
   }
 
+  /**
+   * Description Metodo para cargar los datos de poblacion desde el json para usarlos en nav-bar
+   *
+   * @returns {Observable<Population[]>} 
+   */
   getPopulationData(): Observable<Population[]>{
     // console.log("population")
     return this._http.get<Array<Population>>(this.urlPopulationData);
