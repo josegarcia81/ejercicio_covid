@@ -13,6 +13,8 @@ const blueStroke = new Stroke({color: [39, 88, 245, 0.8],
                                width: 1,});
 const blackStroke = new Stroke({color:[0, 0, 0, 0.8],
                                 width: 1});
+const redStroke = new Stroke({color: [255, 0, 0, 0.58],
+                               width: 5,});
 const bluePoint = new Circle({
                     fill: new Fill({
                         color:[78, 191, 255, 0.58]
@@ -50,9 +52,13 @@ const rosaPolygon = new Style({
 
 //////// LINEAS ///////////
 // Estilo del relleno del Feature Linea
-const line = new Style({
+const lineBlue = new Style({
     stroke: blueStroke,
     image: bluePoint
+})
+
+const redLine = new Style({
+    stroke: redStroke,
 })
 
 //////// EXPORTACIONES ///////////
@@ -61,6 +67,7 @@ export const styleArray = [{
     green: greenPolygon, 
     yellow: yellowPolygon, 
     red: redPolygon, 
-    line: line, 
-    rosa: rosaPolygon
+    rosa: rosaPolygon,
+    lineBlue: lineBlue,
+    lineRed: redLine
 }];

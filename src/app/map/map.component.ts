@@ -112,7 +112,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   private fileVectorSource!: VectorSource;
   private fileVectorLayer!: VectorLayer; 
   private dragAndDropInteraction!: DragAndDrop;
-  private fileUpload: boolean = false;
+  public fileUpload: boolean = false;
 
   
   public bluePolygon: any;
@@ -468,7 +468,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       source: this.lineVectorSource!,
       visible: true,
       zIndex: 4,
-      style: styleArray[0].line
+      style: styleArray[0].lineBlue
     })
     this.map.addLayer(this.lineVectorLayer);
 
@@ -612,7 +612,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this.cutInteraction = new Draw({
       type: 'LineString',
       source: this.lineVectorSource,
-      style: styleArray[0].line
+      style: styleArray[0].lineBlue
     })
       // Boton Cortar poligonos con linea
     const cutPolygon = new Toggle({
@@ -797,7 +797,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       source: this.fileVectorSource,
       visible: true,
       zIndex:5,
-      style: styleArray[0].line
+      style: styleArray[0].lineRed
     })
     this.map.addLayer(this.fileVectorLayer);
 
@@ -818,7 +818,11 @@ export class MapComponent implements OnInit, AfterViewInit {
       onToggle:(active:any)=>{
         this.subControlBar.setVisible(false);
         this.isDrawing = active
-        this.fileUpload = true;
+        if(active){
+          this.fileUpload = true;
+        }else{
+          this.fileUpload = false;
+        }
       }
     });
 
