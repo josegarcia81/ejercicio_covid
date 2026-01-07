@@ -10,6 +10,7 @@ import {defaults} from 'ol/control/defaults'
 import Zoom from 'ol/control/Zoom'
 import GeoJSON from 'ol/format/GeoJSON';
 import Draw from 'ol/interaction/Draw'
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -17,6 +18,12 @@ import Draw from 'ol/interaction/Draw'
 export class MapService {
   // Subject para emitir en caso de cambios en el mapa
   public map!: Map;
+  public layers: any[] = [];
+
+  // private layerArraySubject: Observable<any[]> = new Observable<any[]>();
+  private layerArraySubject: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+  public layerArray$ = this.layerArraySubject.asObservable();
+
 
   constructor() { }
 
@@ -46,5 +53,13 @@ export class MapService {
       return this.map;
     }
 
+    setLayerArray(layers: any[]){
+      this.layerArraySubject.next(layers);
+    }
+
+    // getLayerArray(): Observable<any[]> {
+      
+    //   return this.layerArray$ = this.layers
+    // }
 
 }

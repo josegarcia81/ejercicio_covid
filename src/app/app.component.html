@@ -1,5 +1,17 @@
-<app-nav-bar class="nav"></app-nav-bar>
-<!-- <nav class="nav">Hola</nav> -->
+
+<div [ngSwitch]="selectedNavBar" class="nav">
+    <app-nav-bar  *ngSwitchCase="'default'"></app-nav-bar>
+    <app-layers  *ngSwitchCase="'layers'"></app-layers>
+    <app-area-calc  *ngSwitchCase="'areaCalc'"></app-area-calc>
+    <app-nav-bar  *ngSwitchDefault></app-nav-bar>
+</div>
+
+<!-- <app-nav-bar class="nav" *ngIf="viewStates"></app-nav-bar>
+
+<app-layers class = "layers" *ngIf="viewLayers"></app-layers>
+
+<app-area-calc class="area-calculator" *ngIf="viewAreaCalc"></app-area-calc> -->
+
 <app-map class='app-map'></app-map>
 
 <router-outlet></router-outlet>

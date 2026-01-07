@@ -29,11 +29,12 @@
                 <!-- Icono de Ojo para info estado (click)="detail(data, $event) -->
                 <td class="ancho">
                     <!-- icono clicable: alterna selection de la fila; accesible con teclado -->
-                    <i class="pi pi-eye"
+                    <i  class="pi pi-eye"
                         role="button"
-                        (click)="detail(state, $event,i)"
-                        >
-                    </i>
+                        (click)="detail(state, $event,i)" 
+                        title="view"
+                    >
+                </i>
                 </td>
             </tr>
         </ng-template>

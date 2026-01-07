@@ -114,12 +114,9 @@ export class MapComponent implements OnInit, AfterViewInit {
   private dragAndDropInteraction!: DragAndDrop;
   public fileUpload: boolean = false;
 
-  
-  public bluePolygon: any;
-  
-  
-  
-  
+    // Array nombres capas
+  public layerNames: Array<{name: string; selected: boolean}> = [];
+    
   constructor(
     private _covidData: CovidDataService, // Datos de la API
     private _mapService:MapService, // Mapa,
@@ -229,7 +226,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       visible: true,
       zIndex: 1
     })
-    
+    // Dar nopmbre al layer
+    usStates.set('name','US-States-Layer');
+    // Aniadir nombre al array de nombres de capas
+    this.layerNames.push({name: usStates.get('name'), selected: true});
     // Aniado la Layer que contiene ya los features cargados del Source Al Mapa
     this.map.addLayer(usStates)
     // Setear layer a visible
@@ -455,6 +455,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       zIndex: 2,
       style: styleArray[0].polygon
     })
+    // Dar nombre a la capa
+    this.drawVectorLayer.set('name','Drawn-Features-Layer');
+    // Aniadir nombre al array de nombres de capas
+    this.layerNames.push({name: this.drawVectorLayer.get('name'), selected: true});
     // Aniadimos la VectorLayer al mapa
     this.map.addLayer(this.drawVectorLayer)
 
@@ -470,6 +474,11 @@ export class MapComponent implements OnInit, AfterViewInit {
       zIndex: 4,
       style: styleArray[0].lineBlue
     })
+    // Dar nombre a la capa
+    this.lineVectorLayer.set('name','Line-Features-Layer');
+    // Aniadir nombre al array de nombres de capas
+    this.layerNames.push({name:this.lineVectorLayer.get('name'), selected:false});
+    // Aniadimos la VectorLayer al mapa
     this.map.addLayer(this.lineVectorLayer);
 
     ///////// Barra de control del Mapa ///////////
@@ -925,7 +934,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Lo llamo para que el subscribe este activo y escuche los cambios
     this.resetStyles()
     
-    
+    console.log(this.layerNames);
+
+    this._mapService.setLayerArray(this.layerNames);
 
   }
   // Funciona ok.
@@ -1787,4 +1798,6 @@ export class MapComponent implements OnInit, AfterViewInit {
   //     "<i class='fa-solid fa-arrows-up-down-left-right'></i>",
   //     'Transformar'
   //   );
+
+  
 }
