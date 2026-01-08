@@ -1,8 +1,6 @@
 <!-- <p>app-layers works!</p> -->
 <!-- Tabla para representar los estados con sus checkbox, nombre y detalles -->
     <p-table [value]="layers"
-            [paginator]="true"
-            [rows]="8" 
             [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
             <tr>
@@ -18,7 +16,7 @@
                         [(ngModel)]="layer.selected"
                         [binary]="true" 
                         [inputId]="'binary' + i" 
-                        (click)="onClick($event)">
+                        (click)="onClick(layer, $event, i)">
                     </p-checkbox>
                 </td>
                 <!-- Nombre del Estado -->

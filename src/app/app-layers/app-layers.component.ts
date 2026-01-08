@@ -13,17 +13,24 @@ export class AppLayersComponent implements OnInit {
   constructor(private _mapService: MapService) { }
 
   ngOnInit(): void {
-
-    this._mapService.layerArray$.subscribe(layers => {
-      this.layers = layers;
-    })
-
+    
+      this._mapService.layerArray$.subscribe(layers => {
+        // Seguir Aqui
+        if (layers.length > 0){
+        this.layers = layers;
+        }
+      });
+    
     // this.layers = this._mapService.getLayerArray();
     // console.log('Layers desde LayerComponent',this.layers);
   }
 
-  onClick($event: any) {
+  onClick(layer: any, $event: any, i: number) {
     console.log("AppLayersComponent - onClick", $event);
+    console.log("Layer seleccionado:", layer,'I:', i);
+    console.log(this.layers);
+
+    this._mapService.toggleLayerVisibility(layer);
   }
 
 }

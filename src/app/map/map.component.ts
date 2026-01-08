@@ -74,9 +74,11 @@ export class MapComponent implements OnInit, AfterViewInit {
   public ctrlDisabled: boolean = false;
   private selected: boolean = false; // Usado de toggle al seleccionar un feature seleccionado.
   
-  // Controles //
+  //// Controles ////
   public controlBar!: InstanceType<typeof Bar>;
   public subControlBar!: InstanceType<typeof Bar>;
+  public subControlBarNavBar!: InstanceType<typeof Bar>
+
     // Pintar
   private drawnVectorSource!:VectorSource;
   public drawVectorLayer!: VectorLayer; // La capa donde se van a mostrar
@@ -142,6 +144,16 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.cities.push(state.name)
         
       })
+    });
+
+    this._mapService.layerVisibility$.subscribe(layer => {
+      this.layerNames.forEach((layerName, i) => {
+        if (layerName.name === layer.name) {
+          // layerName.selected = !layerName.selected;
+          let layer = this.map.getLayers().getArray().find(l => l.get('name') === layerName.name);
+          layer?.setVisible(layerName.selected);
+        }
+      });
     });
     // console.log('States Info =>',this.statesInfo)
     // console.log('Cities Info =>',this.cities)
@@ -229,7 +241,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Dar nopmbre al layer
     usStates.set('name','US-States-Layer');
     // Aniadir nombre al array de nombres de capas
-    this.layerNames.push({name: usStates.get('name'), selected: true});
+    this.layerNames.push({name: usStates.get('name'),
+                          selected: true
+                        });
     // Aniado la Layer que contiene ya los features cargados del Source Al Mapa
     this.map.addLayer(usStates)
     // Setear layer a visible
@@ -458,7 +472,9 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Dar nombre a la capa
     this.drawVectorLayer.set('name','Drawn-Features-Layer');
     // Aniadir nombre al array de nombres de capas
-    this.layerNames.push({name: this.drawVectorLayer.get('name'), selected: true});
+    this.layerNames.push({name: this.drawVectorLayer.get('name'),
+                          selected: true
+                        });
     // Aniadimos la VectorLayer al mapa
     this.map.addLayer(this.drawVectorLayer)
 
@@ -474,10 +490,6 @@ export class MapComponent implements OnInit, AfterViewInit {
       zIndex: 4,
       style: styleArray[0].lineBlue
     })
-    // Dar nombre a la capa
-    this.lineVectorLayer.set('name','Line-Features-Layer');
-    // Aniadir nombre al array de nombres de capas
-    this.layerNames.push({name:this.lineVectorLayer.get('name'), selected:false});
     // Aniadimos la VectorLayer al mapa
     this.map.addLayer(this.lineVectorLayer);
 
@@ -523,7 +535,20 @@ export class MapComponent implements OnInit, AfterViewInit {
       e.feature.set('id',this.polIndex);
       this.polIndex++;
       e.feature.set('__originalStyle', styleArray[0].polygon);
-      console.log('Dibujado Draw:', e);
+      // console.log('Dibujado Draw:', e.feature.getGeometry().getCoordinates());
+
+      let coords = e.feature.getGeometry().getCoordinates();
+      let coordsX: number[] = [];
+      let coordsY: number[] = [];
+      coords[0].forEach((coordSet:any)=>{
+        // console.log('Coordenadas X del poligono dibujado:',coordSet[0]);
+        coordsX.push(coordSet[0]);
+        // console.log('Coordenadas Y del poligono dibujado:',coordSet[1]);
+        coordsY.push(coordSet[1]);
+      });
+      let area = this.calculatePolygonArea(coordsX, coordsY);
+      this._mapService.setPolygonArea(area);
+      console.log('Area del poligono dibujado:', area, 'm²');
     })
     // Aniadir toggle a barra principal.
     this.controlBar.addControl(drawPolygon)
@@ -808,6 +833,13 @@ export class MapComponent implements OnInit, AfterViewInit {
       zIndex:5,
       style: styleArray[0].lineRed
     })
+    // Dar nombre a la capa
+    this.fileVectorLayer.set('name','Lines-File-Layer');
+    // Aniadir nombre al array de nombres de capas
+    this.layerNames.push({name:this.fileVectorLayer.get('name'),
+                          selected:true
+                        });
+      // Aniadir Layer al mapa 
     this.map.addLayer(this.fileVectorLayer);
 
 
@@ -829,7 +861,9 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.isDrawing = active
         if(active){
           this.fileUpload = true;
+          this.subControlBarNavBar.setVisible(true);
         }else{
+          this.subControlBarNavBar.setVisible(false);
           this.fileUpload = false;
         }
       }
@@ -838,7 +872,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Aniadir a la barra pricipal
     this.controlBar.addControl(fileUpload);
     
-    // BARRA DE SUBMENU DE SELCCION DE POLIGONO //
+    //// BARRA DE SUBMENU DE SELECCION DE POLIGONO ////
     this.subControlBar = new Bar({
       className: 'sub-toolbar',
       toggleOne: true,
@@ -919,7 +953,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       }
     })
 
-    // Aniadir boton a subBarra
+    // Aniadir botones a subBarra
     this.subControlBar.addControl(delPoligon)
     this.subControlBar.addControl(stateCompareToggle)
     //console.log(this.subControlBar.getActiveControls())
@@ -930,6 +964,60 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Aniadir barra de control
     this.map.addControl(this.controlBar)
 
+    //// BARRA DE SUBMENU MANEJO DE NAVEGADOR LATERAL IZQUIERDO ////
+    this.subControlBarNavBar = new Bar({
+      className: 'sub-toolbar',
+      toggleOne: true,
+      group:true
+    })
+    this.subControlBarNavBar.setVisible(false);
+    // Boton ver comparacion de los estados
+    const viewStatesToggle = new Toggle({
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>',
+      className: 'sub-button',
+      title: 'View US states table',
+      active:false,
+      onToggle: ()=>{
+        console.log('View States pulsado')
+        this._mapService.setNavToShow('default');
+        this.fileUpload = false;
+      }
+    })
+    // Aniadir boton a subBarra
+    this.subControlBarNavBar.addControl(viewStatesToggle);
+
+    // Aniadir Toggle a Barra principal
+    const viewPolAreaToggle = new Toggle({
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ruler-dimension-line-icon lucide-ruler-dimension-line"><path d="M10 15v-3"/><path d="M14 15v-3"/><path d="M18 15v-3"/><path d="M2 8V4"/><path d="M22 6H2"/><path d="M22 8V4"/><path d="M6 15v-3"/><rect x="2" y="12" width="20" height="8" rx="2"/></svg>',
+      className: 'sub-button',
+      title: 'View Polygon Area',
+      active:false,
+      onToggle: ()=>{
+        console.log('View Polygon Area')
+        this._mapService.setNavToShow('areaCalc');
+        this.fileUpload = false;
+      }
+    })
+    // Aniadir boton a subBarra
+    this.subControlBarNavBar.addControl(viewPolAreaToggle);
+
+    // Aniadir subBarra a Barra principal
+    const viewLayersToggle = new Toggle({
+      html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers-icon lucide-layers"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg>',
+      className: 'sub-button',
+      title: 'View Layers Control',
+      active:false,
+      onToggle: ()=>{
+        console.log('View Layers Control')
+        this._mapService.setNavToShow('layers');
+        this.fileUpload = false;
+      }
+    })
+    // Aniadir boton a subBarra
+    this.subControlBarNavBar.addControl(viewLayersToggle);
+
+    this.controlBar.addControl(this.subControlBarNavBar);
+
     // Resetear estilos de los estados //
     // Lo llamo para que el subscribe este activo y escuche los cambios
     this.resetStyles()
@@ -939,6 +1027,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     this._mapService.setLayerArray(this.layerNames);
 
   }
+
+
   // Funciona ok.
   /** Description Subscribe que hace que se resetee el estilo de todos los estados */
   resetStyles() {
@@ -1654,7 +1744,17 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   }
 
+  calculatePolygonArea(xCoords: number[], yCoords: number[]): number {
+    let area = 0;
+    const numPoints = xCoords.length;
 
+    for (let i = 0; i < numPoints; i++) {
+    const j = (i + 1) % numPoints; // Next vertex index (wraps around)
+    area += xCoords[i] * yCoords[j] - xCoords[j] * yCoords[i];
+    }
+
+    return Math.abs(area / 2);
+  }
 
 
   // drawPoligon(drawInteraction:any){

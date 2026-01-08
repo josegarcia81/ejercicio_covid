@@ -16,17 +16,32 @@ import { BehaviorSubject, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class MapService {
+  
   // Subject para emitir en caso de cambios en el mapa
   public map!: Map;
   public layers: any[] = [];
 
-  // private layerArraySubject: Observable<any[]> = new Observable<any[]>();
-  private layerArraySubject: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+
+  private layerArraySubject: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([{name: 'Cargando...', selected: false}]);
   public layerArray$ = this.layerArraySubject.asObservable();
+
+  private navToShowSubject: BehaviorSubject<string> = new BehaviorSubject<string>('');
+  public navToShow$ = this.navToShowSubject.asObservable();
+
+  private polAreaSubject: BehaviorSubject<number> = new BehaviorSubject<number>(0);
+  public polArea$ = this.polAreaSubject.asObservable();
+
+  private layerVisibilitySubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+  public layerVisibility$ = this.layerVisibilitySubject.asObservable();
 
 
   constructor() { }
 
+  /**
+   * Description Devuelve el mapa creado.
+   *
+   * @returns {Map} 
+   */
   getMap(){
 
     // const mapControls = [/*attributionControl, scaleLineControl, overViewMapControl,*/ zoomControl]
@@ -53,13 +68,40 @@ export class MapService {
       return this.map;
     }
 
+    /**
+     * Description Setea los nombres de las capas disponibles.
+     *
+     * @param {any[]} layers 
+     */
     setLayerArray(layers: any[]){
       this.layerArraySubject.next(layers);
     }
+    
+    /**
+     * Description Setea la navegación a mostrar.
+     * @param nav - The name of the navigation item to show
+     */
+    setNavToShow(nav:string){
+      this.navToShowSubject.next(nav);
+    }
 
-    // getLayerArray(): Observable<any[]> {
-      
-    //   return this.layerArray$ = this.layers
-    // }
+    /**
+     * Description placeholder
+     *
+     * @param {number} area 
+     */
+    setPolygonArea(area: number) {
+      this.polAreaSubject.next(area);
+    }
 
+    /**
+     * Description placeholder
+     *
+     * @param {*} layer 
+     * @param {number} i 
+     */
+    toggleLayerVisibility(layer: any) {
+      this.layerVisibilitySubject.next(layer);
+    }
+  
 }
