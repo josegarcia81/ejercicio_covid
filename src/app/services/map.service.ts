@@ -86,7 +86,7 @@ export class MapService {
     }
 
     /**
-     * Description placeholder
+     * Description Setea el área del polígono.
      *
      * @param {number} area 
      */
@@ -95,7 +95,7 @@ export class MapService {
     }
 
     /**
-     * Description placeholder
+     * Description Alternar la visibilidad de una capa.
      *
      * @param {*} layer 
      * @param {number} i 

@@ -121,7 +121,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     
   constructor(
     private _covidData: CovidDataService, // Datos de la API
-    private _mapService:MapService, // Mapa,
+    private _mapService:MapService, // Mapa
     private cd: ChangeDetectorRef
   ) { }
 
@@ -149,8 +149,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     this._mapService.layerVisibility$.subscribe(layer => {
       this.layerNames.forEach((layerName, i) => {
         if (layerName.name === layer.name) {
-          // layerName.selected = !layerName.selected;
-          let layer = this.map.getLayers().getArray().find(l => l.get('name') === layerName.name);
+          let layer = this.map.getLayers().getArray().find(lay => lay.get('name') === layerName.name);
           layer?.setVisible(layerName.selected);
         }
       });
@@ -158,21 +157,6 @@ export class MapComponent implements OnInit, AfterViewInit {
     // console.log('States Info =>',this.statesInfo)
     // console.log('Cities Info =>',this.cities)
 
-    
-
-
-    // // Botton Pintar Poligono
-    // const drawInteraction = arrayInteractions[0].draw
-    // const drawPoligon = new Toggle({
-    //   html: '<i-lucide name="vector-square" [size]="20"></i-lucide>',
-    //   className: 'ctrl-button',
-    //   title: 'Draw',
-    //   interaction: arrayInteractions[0].draw,
-    //   active:false,
-    //   bar:this.subControlBar,
-    //   ontoggle: this.drawPoligon(drawInteraction)
-    // })
-    // this.controlBar.addControl(drawPoligon)
 
   }
 
@@ -291,6 +275,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       // Cambiar estilo al hacer click en un estado //
     
       this.map.on('click', (e) => {
+        this.subControlBarNavBar.setVisible(false); // Al clicar en el mapa se oculta el subcontrol de la navbar
         if(!this.isDrawing){
           // console.log('Features en drawnVectorSource',this.drawnVectorSource.getFeatures());
           // console.log('Click habilitado:',!this.isDrawing)
@@ -672,7 +657,8 @@ export class MapComponent implements OnInit, AfterViewInit {
               const extent = lineaCorte.getGeometry()!.getExtent();
               this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
                 console.log('Poligono intersecta',feature.get('name'));
-                this.cortarPoligonosConLinea(lineaCorte,feature)
+                // this.cortarPoligonosConLinea(lineaCorte,feature)
+                this.cortarPoligonosConLineaPropuesta(lineaCorte,feature);
                 // return feature;
               }) || null;
               
@@ -1475,7 +1461,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     }
     
     // Factoria de geometrias y parses para convertir ol<-->jsts features
-    let geomFactory = new GeometryFactory;
+    const geomFactory = new GeometryFactory;
     const parser = new (OL3Parser as any)(geomFactory);
     // Inyeccion para las geometrias convertibles
     parser.inject(
@@ -1490,7 +1476,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       );
 
     // Parsear las geometrias a jsts
-    let polGeometry = parser.read(poligono!.getGeometry());
+    let polGeometry = parser.read(poligono.getGeometry());
     let lineGeometry = parser.read(linea.getGeometry());
     console.log('JSTS polGeometry',polGeometry);
     console.log('JSTS lineGeometry',lineGeometry);
@@ -1498,23 +1484,27 @@ export class MapComponent implements OnInit, AfterViewInit {
     ///////// Para cortar poligono con Agujeros /////////
     //Perform union of Polygon and Line and use Polygonizer to split the polygon by line        
     let holes = polGeometry._holes;
-    let union = polGeometry.getExteriorRing().union(lineGeometry);
+    // Quitando las orejas
+    let insideLines = lineGeometry.intersection(polGeometry);
+    console.log('Lineas Interiores',insideLines);
+
+    let union = polGeometry.getExteriorRing().union(insideLines);
     let polygonizeHoles = new Polygonizer();
 
     //Splitting polygon in two part        
     polygonizeHoles.add(union);
 
-    // Quitando las orejas
-    let insideLine = lineGeometry.intersection(polGeometry);
+    // // Quitando las orejas
+    // let insideLine = lineGeometry.intersection(polGeometry);
     // insideLine.buffer(10);
-    console.log('lineas intersect',insideLine);
+    console.log('lineas intersect',insideLines);
 
     // Coger el perimetro de poligono
     let bordePoligono = polGeometry.getBoundary();
 
     // unir perimetro a linea y forzar union nodal
     // bordePoligono.Union
-    let perimeters = bordePoligono.union(insideLine);// poner insideLine para ver si quita las orejas del perimetro // o lineGeometry para meterle toda la linea
+    let perimeters = bordePoligono.union(insideLines);// poner insideLine para ver si quita las orejas del perimetro // o lineGeometry para meterle toda la linea
     let nodalPerimeter = UnaryUnionOp.union(perimeters);
     console.log('JSTS Geometry',polGeometry);
 
@@ -1561,10 +1551,118 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.drawnVectorSource.addFeature(newPolygon);
       }
 
+      //// Programacion para ver las lineas generadas ////
+      // Convertir poligono de jsts a Ol
+      // console.log(insideLines._geometries[0]);
+      // insideLines._geometries.forEach((geom:any)=>{
+      //   let line = parser.write(geom);
+      //   let newLine = new Feature({
+      //     geometry: line,
+      //     name:'Line_Prueba'
+      //   })
+      //   this.drawnVectorSource.addFeature(newLine);
+      // })
+      // const olLine = parser.write(insideLine._geometries[0]);
+      // let newLine = new Feature({
+      //   geometry: olLine,
+        
+      //   name:'Line_Prueba'
+      // })
+      // this.drawnVectorSource.addFeature(newLine);
+      
     }
     this.lineVectorSource.removeFeature(linea);
+    console.log('Linea de corte añadida al mapa',this.lineVectorSource.getFeatures());
   }
 
+  /**
+   * CORTA un polígono (feature de OpenLayers) con una línea (feature de OpenLayers).
+   * 
+   * Esta es la versión propuesta y corregida del método.
+   *
+   * @param linea La feature de OpenLayers que contiene la LineString/MultiLineString de corte.
+   * @param poligono La feature de OpenLayers que contiene el Polygon a cortar.
+   */
+  cortarPoligonosConLineaPropuesta(linea: any, poligono: any) {
+      if (poligono === null) {
+        this.lineVectorSource.removeFeature(linea);
+        alert('No intersecta ningun feature');
+        return;
+      }
+  
+      // Factoria de geometrías y parser para convertir entre formatos OL y JSTS
+      const geomFactory = new GeometryFactory();
+      const parser = new (OL3Parser as any)(geomFactory);
+      parser.inject(
+          Point, LineString, LinearRing, Polygon, MultiPoint,
+          MultiLineString, MultiPolygon, GeometryCollection
+      );
+  
+      // 1. Parsear las geometrías a formato JSTS
+      const polGeometry = parser.read(poligono.getGeometry());
+      const lineGeometry = parser.read(linea.getGeometry());
+  
+      // 2. Obtener TODAS las líneas del borde del polígono (contorno exterior y agujeros)
+      const polygonBoundaries = polGeometry.getBoundary();
+  
+      // 3. Crear una colección con todas las líneas que formarán los nuevos polígonos
+      const linesToUnion = [];
+      for (let i = 0; i < polygonBoundaries.getNumGeometries(); i++) {
+          linesToUnion.push(polygonBoundaries.getGeometryN(i));
+      }
+      for (let i = 0; i < lineGeometry.getNumGeometries(); i++) {
+          const segment = lineGeometry.getGeometryN(i);
+          const intersection = polGeometry.intersection(segment);
+          // Se añade la intersección solo si no es nula y no está vacía
+          if (intersection && !intersection.isEmpty()) {
+              linesToUnion.push(intersection);
+          }
+      }
+      console.log('Lines To Union',linesToUnion);
+      // 4. Filtrar geometrías nulas/vacías antes de la unión para evitar el error en JSTS
+      const validLinesToUnion = linesToUnion.filter(geom => geom && !geom.isEmpty());
+      console.log('Valid Lines To Union',validLinesToUnion);
+      // 5. Usar UnaryUnionOp para crear una única geometría de líneas "nodadas" (topológicamente correcta)
+      const nodedLines = UnaryUnionOp.union(validLinesToUnion);
+      console.log('Noded Lines',nodedLines);
+  
+      // 6. Crear los polígonos a partir de la red de líneas nodadas
+      const polygonizer = new Polygonizer();
+      polygonizer.add(nodedLines);
+      const polygons = polygonizer.getPolygons();
+  
+      // 7. Si se generaron polígonos, procesarlos y añadirlos al mapa
+      if (polygons.size() > 0) {
+          this.drawnVectorSource.removeFeature(poligono);
+          const itPolygon = polygons.iterator();
+  
+          while (itPolygon.hasNext()) {
+              const jstsPol = itPolygon.next() as any;
+  
+              // FILTRO DE "OREJAS": Se comprueba que el nuevo polígono esté dentro del original
+              if (polGeometry.contains(jstsPol.getInteriorPoint())) {
+                  
+                  // Si es válido, se convierte de JSTS a formato OpenLayers
+                  const olPol = parser.write(jstsPol);
+                  const newPolygon = new Feature({
+                      geometry: olPol,
+                      name: 'Pol_' + this.polIndex
+                  });
+                  
+                  // Se asume que `styleArray` está disponible en el contexto del componente
+                  newPolygon.set('__originalStyle', (this as any).styleArray[0].polygon);
+                  newPolygon.set('selected', false);
+                  this.polIndex++;
+                  this.drawnVectorSource.addFeature(newPolygon);
+              }
+          }
+      }
+  
+      this.lineVectorSource.removeFeature(linea);
+      console.log('Proceso de corte finalizado.');
+  }
+  
+  
   /**
    * Description Metodo para cortar poligonos, recibe un string para usar dos herramientas para cortar de diferente manera
    *
@@ -1619,15 +1717,16 @@ export class MapComponent implements OnInit, AfterViewInit {
       // let resultPol = OverlayOp.symDifference(pol1Geometry, pol2Geometry);
       let olPol = parser.write(resultPol);
       // Revisar porque crea multipolygon y necesito tipo polygon
+      console.log(olPol);
       
-      const newPolygons = olPol.getPolygons();
-      console.log('newPolygons OL',newPolygons)
+      // const newPolygons = olPol.getPolygon(); // Cambio aqui quito ()
+      // console.log('newPolygons OL',newPolygons)
       // Recorrer el array y crear features
       
-      newPolygons.forEach((pol:any)=>{
+      // olPol.forEach((pol:any)=>{
         
         let resultFeature = new Feature({
-          geometry: pol,
+          geometry: olPol,
           style: styleArray[0].polygon,
           name: 'Pol_'+ this.polIndex
         })
@@ -1635,7 +1734,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         resultFeature.set('__originalStyle',styleArray[0].polygon);
         resultFeature.set('selected',false);
         this.drawnVectorSource.addFeature(resultFeature);
-      })
+      // })
       
       this.drawnVectorSource.removeFeature(pol1);
       this.drawnVectorSource.removeFeature(pol2);

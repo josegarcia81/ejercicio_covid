@@ -20,6 +20,7 @@ import { AppComponent } from './app.component';
 import { MapComponent } from './map/map.component';
 import { NavBarComponent } from './nav-bar/nav-bar.component';
 import { AppLayersComponent } from './app-layers/app-layers.component'
+import { AreaCalcComponent } from './area-calc/area-calc.component';
 
 // NavBar Module //
 import { NavBarModule } from './nav-bar/nav-bar.module';
@@ -36,7 +37,6 @@ import {  LucideAngularModule,
           FilePlusCorner,
           Trash2 
          } from 'lucide-angular';
-import { AreaCalcComponent } from './area-calc/area-calc.component';
 
 
 @NgModule({

@@ -52,7 +52,7 @@ const rosaPolygon = new Style({
 
 //////// LINEAS ///////////
 // Estilo del relleno del Feature Linea
-const lineBlue = new Style({
+const blueLine = new Style({
     stroke: blueStroke,
     image: bluePoint
 })
@@ -68,6 +68,6 @@ export const styleArray = [{
     yellow: yellowPolygon, 
     red: redPolygon, 
     rosa: rosaPolygon,
-    lineBlue: lineBlue,
+    lineBlue: blueLine,
     lineRed: redLine
 }];
