@@ -275,7 +275,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       // Cambiar estilo al hacer click en un estado //
     
       this.map.on('click', (e) => {
-        this.subControlBarNavBar.setVisible(false); // Al clicar en el mapa se oculta el subcontrol de la navbar
+        // this.subControlBarNavBar.setVisible(false); // Al clicar en el mapa se oculta el subcontrol de la navbar
         if(!this.isDrawing){
           // console.log('Features en drawnVectorSource',this.drawnVectorSource.getFeatures());
           // console.log('Click habilitado:',!this.isDrawing)
@@ -658,7 +658,7 @@ export class MapComponent implements OnInit, AfterViewInit {
               this.drawnVectorSource.forEachFeatureIntersectingExtent(extent,(feature)=>{
                 console.log('Poligono intersecta',feature.get('name'));
                 // this.cortarPoligonosConLinea(lineaCorte,feature)
-                this.cortarPoligonosConLineaPropuesta(lineaCorte,feature);
+                this.cortarPoligonosConLinea(lineaCorte,feature);
                 // return feature;
               }) || null;
               
@@ -847,9 +847,9 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.isDrawing = active
         if(active){
           this.fileUpload = true;
-          this.subControlBarNavBar.setVisible(true);
+          // this.subControlBarNavBar.setVisible(true);
         }else{
-          this.subControlBarNavBar.setVisible(false);
+          // this.subControlBarNavBar.setVisible(false);
           this.fileUpload = false;
         }
       }
@@ -914,7 +914,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             console.log('Borrado del Feature');
             this.estadosTocadosArray = []; // reset de array estadosTocados
             console.log('Volver al centro');
-            this.map.getView().animate({center: fromLonLat([-99.92,35.56])}, {zoom: 4},{duration: 600}); // Volver al centro
+            this.map.getView().animate({center: fromLonLat([-99.92,35.56])}, {zoom: 4.5},{duration: 600}); // Volver al centro
           }
           
         }
@@ -952,11 +952,12 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     //// BARRA DE SUBMENU MANEJO DE NAVEGADOR LATERAL IZQUIERDO ////
     this.subControlBarNavBar = new Bar({
-      className: 'sub-toolbar',
+      className: 'sub-toolbar-2',
       toggleOne: true,
       group:true
     })
-    this.subControlBarNavBar.setVisible(false);
+    this.subControlBarNavBar.setVisible(true);
+    this.subControlBarNavBar.setPosition('bottom-left');
     // Boton ver comparacion de los estados
     const viewStatesToggle = new Toggle({
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>',
@@ -1002,7 +1003,7 @@ export class MapComponent implements OnInit, AfterViewInit {
     // Aniadir boton a subBarra
     this.subControlBarNavBar.addControl(viewLayersToggle);
 
-    this.controlBar.addControl(this.subControlBarNavBar);
+    this.map.addControl(this.subControlBarNavBar);
 
     // Resetear estilos de los estados //
     // Lo llamo para que el subscribe este activo y escuche los cambios
@@ -1488,14 +1489,14 @@ export class MapComponent implements OnInit, AfterViewInit {
     let insideLines = lineGeometry.intersection(polGeometry);
     console.log('Lineas Interiores',insideLines);
 
-    let union = polGeometry.getExteriorRing().union(insideLines);
+    let union = polGeometry.getExteriorRing().union(lineGeometry);
     let polygonizeHoles = new Polygonizer();
 
     //Splitting polygon in two part        
     polygonizeHoles.add(union);
 
     // // Quitando las orejas
-    // let insideLine = lineGeometry.intersection(polGeometry);
+    let insideLine = lineGeometry.intersection(polGeometry);
     // insideLine.buffer(10);
     console.log('lineas intersect',insideLines);
 
@@ -1504,7 +1505,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     // unir perimetro a linea y forzar union nodal
     // bordePoligono.Union
-    let perimeters = bordePoligono.union(insideLines);// poner insideLine para ver si quita las orejas del perimetro // o lineGeometry para meterle toda la linea
+    let perimeters = bordePoligono.union(insideLine);// poner insideLine para ver si quita las orejas del perimetro // o lineGeometry para meterle toda la linea
     let nodalPerimeter = UnaryUnionOp.union(perimeters);
     console.log('JSTS Geometry',polGeometry);
 
@@ -1572,7 +1573,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       
     }
     this.lineVectorSource.removeFeature(linea);
-    console.log('Linea de corte añadida al mapa',this.lineVectorSource.getFeatures());
+    // console.log('Linea de corte añadida al mapa',this.lineVectorSource.getFeatures());
   }
 
   /**

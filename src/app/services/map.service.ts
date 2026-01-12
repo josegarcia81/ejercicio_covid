@@ -50,7 +50,7 @@ export class MapService {
         view: new View({
           center: fromLonLat([-99.92,35.56]),
           // center: olProj.toLonLat([-10834205.143065585,4533066.249497813],'EPSG:3857'),
-          zoom: 4,
+          zoom: 4.5,
           // No funciona
           //extent:[-14470164.744565764,2160596.1727030342,-6979732.56896254,6902424.938499223]
           //projection: olProj.toLonLat([-11097468.579299154, 4836162.802892406]),

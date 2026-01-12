@@ -1,7 +1,7 @@
 .map{
     /* fill parent container (app-map) */
     width: 100%;
-    height: 30em;
+    height: 100%;
     display: block;
     position: relative;
     z-index: 0;
@@ -9,7 +9,7 @@
 
 .letrero-info{
     width: 10vw;
-    height: 10vw
+    height: 10vw;
 }
 
 #letreroTexto{
@@ -28,10 +28,10 @@
   .mapControls{
     position: absolute !important;
     top: unset !important;
-    bottom: 0.8em;
+    bottom: 3.8em;
     height: 2.4em;
     align-items: center;
-    left: 13rem !important;
+    left: 12.5rem !important;
     z-index: 1000000;          /* encima del mapa */
     pointer-events: auto;   /* permitir interacción */
     display: flex;
@@ -40,7 +40,7 @@
     background: rgba(255,255,255,0.85);
     padding: 0.5rem;
     border-radius: 6px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    box-shadow: -6px 6px 6px rgba(0, 0, 0, 0.3);
 
     .ctrl-button{
       padding: 0.5em !important;
@@ -58,7 +58,7 @@
 
   .sub-toolbar{
     position: absolute !important;
-    bottom: 3.8em !important;
+    bottom: 11.7em !important;
     height: 3.2em;
     align-items: center;
     left: 0rem !important;
@@ -70,7 +70,7 @@
     background: rgba(255, 255, 255, 0.85);
     padding: 0.5rem !important;
     border-radius: 6px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    box-shadow: -6px 6px 6px rgba(0, 0, 0, 0.3);
     background-color: white !important;
     
     .sub-button{
@@ -86,6 +86,35 @@
 
     
     }
+
+  }
+  .sub-toolbar-2{
+    position: relative !important;
+    bottom: -35.2em !important;
+    // height: 3.2em;
+    align-items: center;
+    left: 0.8rem !important;
+    z-index: 1000000;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 0.5rem !important;
+    border-radius: 6px;
+    box-shadow: -6px 6px 6px rgba(0, 0, 0, 0.3);
+    background-color: white !important;
+    width: fit-content;
+
+    .sub-button{
+      // padding: 0.5em !important;
+      background-color: white !important;
+      color: blue;
+
+      svg{
+        box-sizing: content-box !important;
+      }
+    } 
   }
 }
 
