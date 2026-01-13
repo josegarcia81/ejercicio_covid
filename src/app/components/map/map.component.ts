@@ -287,23 +287,25 @@ export class MapComponent implements OnInit, AfterViewInit {
         const features: any[] = this.map.getFeaturesAtPixel(e.pixel) || [];
         // Features dibujados en el pixel clickado aplicado filtro de capa(VectorLayer)
         this.drawnFeatureAtPixel = this.map.getFeaturesAtPixel(e.pixel, { layerFilter: (layer) => { return layer === this.drawVectorLayer; } }) || [];
+        if (this.drawnFeatureAtPixel.length === 1) {
+          // Recogida de coodenadas para los arrays de X e Y para el metodo de area
+          let coords = this.drawnFeatureAtPixel[0].getGeometry().getCoordinates();
+          let coordsX: number[] = [];
+          let coordsY: number[] = [];
+          coords[0].forEach((coordSet: any) => {
+            // console.log('Coordenadas X del poligono dibujado:',coordSet[0]);
+            coordsX.push(coordSet[0]);
+            // console.log('Coordenadas Y del poligono dibujado:',coordSet[1]);
+            coordsY.push(coordSet[1]);
+          });
+          let area = this.calculatePolygonArea(coordsX, coordsY);
+          this._mapService.setPolygonArea(area);
+          console.log('Area del poligono dibujado:', area, 'm²');
+        }
 
-        // Recogida de coodenadas para los arrays de X e Y para el metodo de area
-        let coords = this.drawnFeatureAtPixel[0].getGeometry().getCoordinates();
-        let coordsX: number[] = [];
-        let coordsY: number[] = [];
-        coords[0].forEach((coordSet: any) => {
-          // console.log('Coordenadas X del poligono dibujado:',coordSet[0]);
-          coordsX.push(coordSet[0]);
-          // console.log('Coordenadas Y del poligono dibujado:',coordSet[1]);
-          coordsY.push(coordSet[1]);
-        });
-        let area = this.calculatePolygonArea(coordsX, coordsY);
-        this._mapService.setPolygonArea(area);
-        console.log('Area del poligono dibujado:', area, 'm²');
 
         console.log('Nombre del Feature Seleccionado pixel:', this.drawnFeatureAtPixel[0]?.get('name'));// Con interrogacion la indicamos que puede haber o no para que no falle.
-        console.log('Filtro por capa drawnFeatureAtPixel:', this.drawnFeatureAtPixel);
+        console.log('Filtro por capa drawnFeatureAtPixel todos los features:', this.drawnFeatureAtPixel);
         console.log('AllFeatures at pixel', features);
         console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures());
 
@@ -685,6 +687,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             // if(lineaCorte){;}
           }
         } else {
+          this.map.removeInteraction(this.drawInteraction);
           this.map.addInteraction(this.cutInteraction);
 
         }
@@ -780,17 +783,26 @@ export class MapComponent implements OnInit, AfterViewInit {
             return;
           }
           let index = this.drawnVectorSource.getFeatures().length - 1;
-          console.log('Index of drwanFeature:', index)
-          const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
+          console.log('Index of drawanFeature:', index)
 
-          const extent = lastFeature.getGeometry()!.getExtent();
+          for (let i = index; i >= 0; i--) {
+            console.log(i);
+            // console.log(index, feature.get('name'));
+            const lastFeature = this.drawnVectorSource.getFeatures()[i]; // Probar con byId
+            const extent = lastFeature.getGeometry()!.getExtent();
 
-          const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
-            console.log('Poligono intersecta', feature.get('name'));
-            return feature;
-          }) || null;
-          console.log('FeatureTocada corte por poligonos:', featureTocada);
-          this.unirPoligonoConPoligono(featureTocada, lastFeature);
+            const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+              console.log('Poligono intersecta', feature.get('name'));
+              return feature;
+            }) || null;
+            console.log('FeatureTocada corte por poligonos:', featureTocada);
+            this.unirPoligonoConPoligono(featureTocada, lastFeature);
+          }
+
+          // this.drawnVectorSource.getFeatures().forEach((feature, index) => {
+
+          // })
+
         }
       }
     });
