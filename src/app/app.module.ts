@@ -18,12 +18,12 @@ import { AppRoutingModule } from './app-routing.module';
 // Componentes //
 import { AppComponent } from './app.component';
 import { MapComponent } from './components/map/map.component';
-import { NavBarComponent } from './components/nav-bar/nav-bar.component';
-import { AppLayersComponent } from './components/app-layers/app-layers.component'
-import { AreaCalcComponent } from './components/area-calc/area-calc.component';
+import { NavBarComponent } from './components/menu-nav/nav-bar/nav-bar.component';
+import { AppLayersComponent } from './components/menu-nav/app-layers/app-layers.component'
+import { AreaCalcComponent } from './components/menu-nav/area-calc/area-calc.component';
 
 // NavBar Module //
-import { NavBarModule } from './components/nav-bar/nav-bar.module';
+import { NavBarModule } from './components/menu-nav/nav-bar/nav-bar.module';
 
 // Lucide Icons //
 import {

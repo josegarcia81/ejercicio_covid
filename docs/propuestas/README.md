@@ -29,6 +29,21 @@ Este directorio contiene todas las propuestas de mejora y soluciones para el pro
 
 ---
 
+### 02b - Layout Responsivo Mejorado (Versión con Protecciones Extra)
+**Archivo:** [`02b-layout-responsivo-mejorado.md`](./02b-layout-responsivo-mejorado.md)  
+**Estado:** ⏳ Pendiente  
+**Fecha:** 2026-01-13  
+**Descripción:** Versión mejorada de la propuesta 02 con protecciones adicionales garantizando que el nav-bar nunca se salga de la pantalla. Incluye:
+- 4 niveles de protección (límites de altura, flexbox constraints, overflow management, contenedor bloqueado)
+- Breakpoint adicional para móviles muy pequeños (480px)
+- Scrollbar estético
+- Protección contra overflow horizontal
+
+**Archivos afectados:**
+- `src/app/app.component.scss`
+
+---
+
 ## 🎯 Leyenda de Estados
 
 - ✅ **Implementado** - Cambios aplicados y funcionando

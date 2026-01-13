@@ -3,11 +3,11 @@
 import { NgIf } from '@angular/common';
 import { Component, OnInit, AfterViewInit } from '@angular/core';
 // Servicios
-import { CovidDataService, Population } from '../../services/covid-data.service';
+import { CovidDataService, Population } from '../../../services/covid-data.service';
 import { MessageService } from 'primeng/api';
 // Modelos
-import { CovidData } from '../../models/CovidData.model';
-import { StateInfo } from '../../models/StateInfo.model';
+import { CovidData } from '../../../models/CovidData.model';
+import { StateInfo } from '../../../models/StateInfo.model';
 
 @Component({
   selector: 'app-nav-bar',
