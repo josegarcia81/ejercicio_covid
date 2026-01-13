@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { MapService } from '../services/map.service';
+import { MapService } from '../../services/map.service';
 
 @Component({
   selector: 'app-layers',
@@ -13,21 +13,21 @@ export class AppLayersComponent implements OnInit {
   constructor(private _mapService: MapService) { }
 
   ngOnInit(): void {
-    
-      this._mapService.layerArray$.subscribe(layers => {
-        // Seguir Aqui
-        if (layers.length > 0){
+
+    this._mapService.layerArray$.subscribe(layers => {
+      // Seguir Aqui
+      if (layers.length > 0) {
         this.layers = layers;
-        }
-      });
-    
+      }
+    });
+
     // this.layers = this._mapService.getLayerArray();
     // console.log('Layers desde LayerComponent',this.layers);
   }
 
   onClick(layer: any, $event: any, i: number) {
     console.log("AppLayersComponent - onClick", $event);
-    console.log("Layer seleccionado:", layer,'I:', i);
+    console.log("Layer seleccionado:", layer, 'I:', i);
     console.log(this.layers);
 
     this._mapService.toggleLayerVisibility(layer);

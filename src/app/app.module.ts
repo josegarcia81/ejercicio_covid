@@ -17,26 +17,27 @@ import { AppRoutingModule } from './app-routing.module';
 
 // Componentes //
 import { AppComponent } from './app.component';
-import { MapComponent } from './map/map.component';
-import { NavBarComponent } from './nav-bar/nav-bar.component';
-import { AppLayersComponent } from './app-layers/app-layers.component'
-import { AreaCalcComponent } from './area-calc/area-calc.component';
+import { MapComponent } from './components/map/map.component';
+import { NavBarComponent } from './components/nav-bar/nav-bar.component';
+import { AppLayersComponent } from './components/app-layers/app-layers.component'
+import { AreaCalcComponent } from './components/area-calc/area-calc.component';
 
 // NavBar Module //
-import { NavBarModule } from './nav-bar/nav-bar.module';
+import { NavBarModule } from './components/nav-bar/nav-bar.module';
 
 // Lucide Icons //
-import {  LucideAngularModule, 
-          VectorSquare, 
-          Minimize2, 
-          Move, 
-          Scissors,
-          SquaresSubtract, 
-          SquaresUnite, 
-          SquaresExclude,
-          FilePlusCorner,
-          Trash2 
-         } from 'lucide-angular';
+import {
+  LucideAngularModule,
+  VectorSquare,
+  Minimize2,
+  Move,
+  Scissors,
+  SquaresSubtract,
+  SquaresUnite,
+  SquaresExclude,
+  FilePlusCorner,
+  Trash2
+} from 'lucide-angular';
 
 
 @NgModule({
@@ -60,17 +61,17 @@ import {  LucideAngularModule,
     ListboxModule,
     AutoCompleteModule,
     LucideAngularModule.pick({
-      VectorSquare, 
-      Minimize2, 
-      Move, 
-      Scissors, 
-      SquaresSubtract, 
-      SquaresUnite, 
-      SquaresExclude, 
+      VectorSquare,
+      Minimize2,
+      Move,
+      Scissors,
+      SquaresSubtract,
+      SquaresUnite,
+      SquaresExclude,
       FilePlusCorner,
       Trash2
     })
-],
+  ],
   providers: [],
   bootstrap: [AppComponent]
 })

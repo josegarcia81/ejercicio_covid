@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { MapService } from '../services/map.service';
+import { MapService } from '../../services/map.service';
 
 @Component({
   selector: 'app-area-calc',
@@ -10,7 +10,7 @@ export class AreaCalcComponent implements OnInit {
 
   areaCalcResult: number | null = null;
 
-  constructor(private _mapService:MapService) { }
+  constructor(private _mapService: MapService) { }
 
   ngOnInit(): void {
 
