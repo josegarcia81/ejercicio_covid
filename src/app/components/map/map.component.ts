@@ -305,7 +305,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         }
 
 
-        console.log('Nombre del Feature Seleccionado pixel:', this.drawnFeatureAtPixel[0]?.get('name'));// Con interrogacion la indicamos que puede haber o no para que no falle.
+        console.log('Nombre del Feature Seleccionado pixel:', this.drawnFeatureAtPixel[0]?.get('name'), this.drawnFeatureAtPixel[0]?.getGeometry().getExtent()); // Con interrogacion la indicamos que puede haber o no para que no falle.
         console.log('Filtro por capa drawnFeatureAtPixel todos los features:', this.drawnFeatureAtPixel);
         console.log('AllFeatures at pixel', features);
         console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures());
@@ -726,8 +726,10 @@ export class MapComponent implements OnInit, AfterViewInit {
       onToggle: (active: any) => {
         this.subControlBar.setVisible(false);
         this.isDrawing = active;
+        // this.drawArrayLength = this.drawnVectorSource.getFeatures().length;
         if (active) {
           this.drawArrayLength = this.drawnVectorSource.getFeatures().length;
+          console.log('drawArrayLength en if', this.drawArrayLength);
           this.subControlBar.setVisible(false);
           this.isDrawing = active;
           this.map.addInteraction(this.drawInteraction);
@@ -735,6 +737,8 @@ export class MapComponent implements OnInit, AfterViewInit {
         } else {
           this.map.removeInteraction(this.drawInteraction);
           console.log('Desactivando interaction', this.map.getInteractions());
+          // console.log('drawArrayLength', this.drawArrayLength);
+          console.log('drawnVectorSource', this.drawnVectorSource.getFeatures().length);
           // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
           if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
             return;
@@ -774,6 +778,8 @@ export class MapComponent implements OnInit, AfterViewInit {
         if (active) {
           // this.subControlBar.setVisible(false);
           // this.isDrawing = active;
+          // Actualizar valor de drawArrayLength
+          this.drawArrayLength = this.drawnVectorSource.getFeatures().length;
           this.map.addInteraction(this.drawInteraction);
           console.log('Activando interaction pintar');
         } else {
@@ -822,6 +828,8 @@ export class MapComponent implements OnInit, AfterViewInit {
         if (active) {
           // this.subControlBar.setVisible(false);
           // this.isDrawing = active;
+          // Actualizar valor de drawArrayLength
+          this.drawArrayLength = this.drawnVectorSource.getFeatures().length;
           this.map.addInteraction(this.drawInteraction);
           console.log('Activando interaction pintar');
         } else {
@@ -1009,7 +1017,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-icon lucide-list"><path d="M3 5h.01"/><path d="M3 12h.01"/><path d="M3 19h.01"/><path d="M8 5h13"/><path d="M8 12h13"/><path d="M8 19h13"/></svg>',
       className: 'sub-button',
       title: 'View US states table',
-      active: false,
+      active: true,
       onToggle: () => {
         console.log('View States pulsado')
         this._mapService.setNavToShow('default');

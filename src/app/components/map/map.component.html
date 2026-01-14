@@ -9,7 +9,8 @@
 <!-- div para el mapa -->
 <div id="map" class="map">
     <p-autoComplete [(ngModel)]="selectedState" [suggestions]="filteredStates" (completeMethod)="searchStates($event)"
-        (onSelect)="onStateSelected($event)" [dropdown]="true" [forceSelection]="true" [minLength]="1">
+        (onSelect)="onStateSelected($event)" placeholder="Buscar estado..." [dropdown]="true" [forceSelection]="true"
+        [minLength]="1">
     </p-autoComplete>
 </div>
 
