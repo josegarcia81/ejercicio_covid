@@ -119,6 +119,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   // Array nombres capas
   public layerNames: Array<{ name: string; selected: boolean }> = [];
   private drawArrayLength: number = 0;
+  public filteredStates!: string[];
 
   constructor(
     private _covidData: CovidDataService, // Datos de la API
@@ -1100,9 +1101,93 @@ export class MapComponent implements OnInit, AfterViewInit {
    *
    * @param {*} event 
    */
-  selecState(event: any) {
+  // selecState(event: any) {
+  //   // console.log('LECTURA estado anterior: ',this.estadoAnterior?.get('ste_name'));
+  //   const stateName = event.value;
+  //   const matchedState = this.usSource.getFeatures().find((feature: any) => feature.get('ste_name').toString() === stateName) as Feature;
+  //   // console.log('Estado Seleccionado:',matchedState.get('ste_name'));
+  //   // console.log('Estado inicio:',matchedState);
+
+
+  //   if (!this.estadoAnterior) {
+  //     // this.estadoAnterior = matchedState;
+  //     this.estadoAnterior = matchedState;
+  //     console.log('a entrado en 1')
+  //   } else if (this.estadoAnterior!.get('ste_name') !== matchedState.get('ste_name')) {
+  //     this.estadoAnterior = matchedState;
+  //     console.log('a entrado en 2')
+  //     console.log('SET estado anterior: ', this.estadoAnterior.get('ste_name'))
+  //   } else {
+  //     console.log('a entrado en 3')
+  //     const original = this.estadoAnterior.get('__originalStyle');
+  //     // console.log(this.estadoAnterior.getStyle())
+  //     // console.log(original)
+  //     this.estadoAnterior.setStyle(original);
+  //     // this.estadoAnterior!.set('__selected', false);
+  //   }
+
+  //   const coord = matchedState?.get('geo_point_2d')
+  //   const lon = coord.lon
+  //   const lat = coord.lat
+
+  //   // console.log(matchedState?.get('geo_point_2d'))
+  //   // console.log(typeof(coord))
+
+  //   const isSelected: boolean = matchedState.get('__selected');
+  //   console.log('COMPARACION', (!isSelected && matchedState))
+
+  //   if (!isSelected || matchedState) {
+  //     const original = this.estadoAnterior!.get('__originalStyle');
+  //     this.estadoAnterior!.setStyle(original);
+  //     this.estadoAnterior!.set('__selected', false);
+
+  //     // viajar al estado
+  //     this.map.getView().animate({ center: fromLonLat([lon, lat]) }, { zoom: 5 })
+  //     //matchedState.set('__originalStyle', matchedState.getStyle());
+  //     matchedState.set('__selected', true);
+  //     matchedState.setStyle(styleArray[0].rosa)
+  //     this._covidData.setSelectedState(matchedState.get('ste_stusps_code'), true)
+
+  //     //console.log('a entrado')
+  //   }
+  // }
+
+  // Otra opcion para el desplegable de estado.
+  /**
+   * Description
+   * @param {any} event
+   * @returns {any}
+   */
+  searchStates(event: any) {
+    const query = event.query.toLowerCase();
+
+    // Filtra los estados que contienen el texto escrito
+    this.filteredStates = this.cities.filter(city =>
+      city.toLowerCase().includes(query)
+    );
+    //   const stateName = event.value;
+    // this.filteredStates = this.usSource.getFeatures().find((feature: any) => feature.get('ste_name').toString() === stateName) as Feature;
+  }
+
+
+  /**
+   * Description
+   * @param {any} event
+   * @returns {any}
+   */
+  onStateSelected(event: any) {
+    // event contiene el valor seleccionado
+    console.log('Estado seleccionado:', event);
+    console.log('Valor:', this.selectedState);
+
+    // Aquí puedes hacer lo que necesites:
+    // - Hacer zoom en el mapa al estado
+    // - Cargar datos del estado
+    // - Mostrar información
+    // - Etc.
+
     // console.log('LECTURA estado anterior: ',this.estadoAnterior?.get('ste_name'));
-    const stateName = event.value;
+    const stateName = event;
     const matchedState = this.usSource.getFeatures().find((feature: any) => feature.get('ste_name').toString() === stateName) as Feature;
     // console.log('Estado Seleccionado:',matchedState.get('ste_name'));
     // console.log('Estado inicio:',matchedState);
@@ -1132,18 +1217,21 @@ export class MapComponent implements OnInit, AfterViewInit {
     // console.log(matchedState?.get('geo_point_2d'))
     // console.log(typeof(coord))
 
-    const isSelected: boolean = matchedState.get('__selected');
-    console.log('COMPARACION', (!isSelected && matchedState))
+    const isSelected = matchedState.get('selected');
+    console.log(matchedState.getKeys());
+
+    console.log('isSelected', matchedState, isSelected)
+    console.log('COMPARACION', (!isSelected && matchedState) as boolean)
 
     if (!isSelected || matchedState) {
       const original = this.estadoAnterior!.get('__originalStyle');
       this.estadoAnterior!.setStyle(original);
-      this.estadoAnterior!.set('__selected', false);
+      this.estadoAnterior!.set('selected', false);
 
       // viajar al estado
       this.map.getView().animate({ center: fromLonLat([lon, lat]) }, { zoom: 5 })
       //matchedState.set('__originalStyle', matchedState.getStyle());
-      matchedState.set('__selected', true);
+      matchedState.set('selected', true);
       matchedState.setStyle(styleArray[0].rosa)
       this._covidData.setSelectedState(matchedState.get('ste_stusps_code'), true)
 

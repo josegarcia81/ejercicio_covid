@@ -28,7 +28,7 @@
   .mapControls {
     position: absolute !important;
     top: unset !important;
-    bottom: 5.5rem;
+    bottom: 0.5rem;
     height: 2.4em;
     align-items: center;
     left: 0% !important;
@@ -92,7 +92,7 @@
 
   .sub-toolbar-2 {
     position: absolute !important;
-    bottom: 9rem !important;
+    bottom: 4rem !important;
     align-items: center;
     left: 1.2rem !important;
     z-index: 1000000;
@@ -121,7 +121,7 @@
   // Ajustar tamaños en móviles
   @media (max-width: 768px) {
     .mapControls {
-      bottom: 5.5rem;
+      bottom: 0.5rem;
       gap: 0.25rem;
       padding: 0.25rem;
 
@@ -136,12 +136,26 @@
     }
 
     .sub-toolbar {
-      bottom: 13rem !important;
+      bottom: 11rem !important;
       height: 3.6rem !important;
     }
 
     .sub-toolbar-2 {
-      bottom: 9rem !important;
+      bottom: 4rem !important;
+    }
+  }
+
+  .p-autocomplete {
+    display: inline-flex !important;
+    position: absolute !important;
+    z-index: 2;
+    left: 3rem;
+    top: 0.5rem;
+
+    .p-autocomplete-panel {
+      min-width: 100%;
+      top: 3rem !important;
+      left: 0rem !important;
     }
   }
 

@@ -1,13 +1,17 @@
 <!-- Listbox - Filter de primeng para filtrar/buscar -->
-<p-listbox [options]="cities" [(ngModel)]="selectedCity" [filter]="true" [style]="{ width: '15rem' }"
+<!-- <p-listbox [options]="cities" [(ngModel)]="selectedCity" [filter]="true" [style]="{ width: '15rem' }"
     [listStyle]="{'max-height': '100px'}" class="p-listbox-icon-left" (onClick)="selecState($event)">
-</p-listbox>
+</p-listbox> -->
+
 <!-- p-autocomplete - Filter de primeng para filtrar/buscar -->
-<p-autoComplete [(ngModel)]="cities" [suggestions]="cities" field='name' (completeMethod)="selecState($event)">
-</p-autoComplete>
+
 
 <!-- div para el mapa -->
-<div id="map" class="map"></div>
+<div id="map" class="map">
+    <p-autoComplete [(ngModel)]="selectedState" [suggestions]="filteredStates" (completeMethod)="searchStates($event)"
+        (onSelect)="onStateSelected($event)" [dropdown]="true" [forceSelection]="true" [minLength]="1">
+    </p-autoComplete>
+</div>
 
 <!-- Div para mostrar el letrero sobre los estados -->
 <div class="letrero-info">
