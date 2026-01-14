@@ -158,6 +158,17 @@
       top: 3rem !important;
       left: 0rem !important;
     }
+
+  }
+
+  p-autocomplete span {
+    border-radius: 10px;
+  }
+
+  .ol-zoom {
+    top: 0.5em;
+    left: .5em;
+    box-shadow: -5px 6px 6px rgba(0, 0, 0, 0.3);
   }
 
 }
