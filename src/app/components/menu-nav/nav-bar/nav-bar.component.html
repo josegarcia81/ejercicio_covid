@@ -1,80 +1,62 @@
 <div>
-    <!-- Tabla para representar los estados con sus checkbox, nombre y detalles -->
-    <p-table [value]="statesInfo"
-            [paginator]="true"
-            [rows]="8"
-            [responsive]="true"
-            [tableStyle]="{ 'min-width': '100%', 'height': '300px' }">
-        <ng-template pTemplate="header">
-            <tr>
-                <th>Select</th>
-                <th>State</th>
-                <th>Detail</th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-state let-i="rowIndex"> <!--  -->
-            <tr >
-                <!-- CheckBox -->
-                <td class="ancho">
-                    <p-checkbox 
-                        [(ngModel)]="state.selected" 
-                        [binary]="true" 
-                        [inputId]="'binary' + i" 
-                        (click)="onClick(state, $event, i)">
-                    </p-checkbox>
-                </td>
-                <!-- Nombre del Estado -->
-                <td class="ancho">
-                    {{ state.name }}
-                </td>
-                <!-- Icono de Ojo para info estado (click)="detail(data, $event) -->
-                <td class="ancho">
-                    <!-- icono clicable: alterna selection de la fila; accesible con teclado -->
-                    <i  class="pi pi-eye"
-                        role="button"
-                        (click)="detail(state, $event,i)" 
-                        title="view"
-                    >
-                </i>
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
+    <article>
+        <!-- Tabla para representar los estados con sus checkbox, nombre y detalles -->
+        <p-table [value]="statesInfo" [paginator]="true" [rows]="8" [responsive]="true"
+            [tableStyle]="{ 'min-width': '100%', 'height': '50%' }">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Select</th>
+                    <th>State</th>
+                    <th>Detail</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-state let-i="rowIndex"> <!--  -->
+                <tr>
+                    <!-- CheckBox -->
+                    <td class="ancho">
+                        <p-checkbox [(ngModel)]="state.selected" [binary]="true" [inputId]="'binary' + i"
+                            (click)="onClick(state, $event, i)">
+                        </p-checkbox>
+                    </td>
+                    <!-- Nombre del Estado -->
+                    <td class="ancho">
+                        {{ state.name }}
+                    </td>
+                    <!-- Icono de Ojo para info estado (click)="detail(data, $event) -->
+                    <td class="ancho">
+                        <!-- icono clicable: alterna selection de la fila; accesible con teclado -->
+                        <i class="pi pi-eye" role="button" (click)="detail(state, $event,i)" title="view">
+                        </i>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
 
-    <!-- Boton comparar -->
-    <p-button 
-        label="Compare" 
-        (onClick)="compare()">
-    </p-button>
-    
+        <!-- Boton comparar -->
+        <p-button label="Compare" (onClick)="compare()">
+        </p-button>
+    </article>
     <!-- Presentar comparacion o visualizacion con modal -->
-    <p-dialog 
-        *ngIf="compareOk"
-        header="{{headerName}}" 
-        [modal]="true"
-        [(visible)]="visible" 
-        [style]="dialogStyles"
-        [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }" 
-        [dismissableMask]="true"
-        [closable]="false"
-        [resizable]="true"
-        class="ancho">
+    <p-dialog *ngIf="compareOk" header="{{headerName}}" [modal]="true" [(visible)]="visible" [style]="dialogStyles"
+        [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }" [dismissableMask]="true" [closable]="false"
+        [resizable]="true" class="ancho">
         <!-- Contenido del dialog con accordion -->
         <div class="dialogContent">
             <ng-container *ngFor="let coun of compareArray; let i = index">
                 <div class="col flex align-items-center justify-content-center">
-                    <p-accordion 
-                        [activeIndex]="[0,1]"
-                        [multiple]="true">
-                        <div *ngIf="comparar" >
-                            <p class="nombreEstado">{{coun.getStateName()}}<span *ngIf='comparar && this.compareArray.length === 2'> %</span></p>
+                    <p-accordion [activeIndex]="[0,1]" [multiple]="true">
+                        <div *ngIf="comparar">
+                            <p class="nombreEstado">{{coun.getStateName()}}<span
+                                    *ngIf='comparar && this.compareArray.length === 2'> %</span></p>
                             <p>{{coun.getPopulation()}} people</p>
                         </div>
                         <!-- <p *ngIf="comparar" class="nombreEstado">{{coun.getStateName()}} %{{coun.getPopulation()}}</p> -->
                         <!-- <p *ngIf="comparar" class="nombreEstado"></p> -->
                         <p-accordionTab>
                             <ng-template pTemplate="header">
-                                <p>Cases <span *ngIf='comparar && this.compareArray.length === 2' [ngClass]="compararDosEstadosCase(i)">(% {{coun?.getCasePerc() | number:'1.2-2'}} )</span></p>
+                                <p>Cases <span *ngIf='comparar && this.compareArray.length === 2'
+                                        [ngClass]="compararDosEstadosCase(i)">(% {{coun?.getCasePerc() |
+                                        number:'1.2-2'}} )</span></p>
                                 <!-- <p>Cases <span *ngIf='comparar' [ngClass]="compareArray[0]?.getCasePerc() > compareArray[1]?.getCasePerc() ? 'verde':'rojo'">(% {{coun?.getCasePerc() | number:'1.2-2'}} )</span></p> -->
                             </ng-template>
                             <!-- <p>{{ comparar ? (getPorcentaje(coun) | number:'1.0-1') + '%' : '' }}</p> -->
@@ -83,7 +65,9 @@
                         </p-accordionTab>
                         <p-accordionTab>
                             <ng-template pTemplate="header">
-                                <p>Hospitalization <span *ngIf='comparar && this.compareArray.length === 2' [ngClass]="compararDosEstadosHosp(i)">(% {{coun?.getHospPerc() | number:'1.2-2'}} )</span></p>
+                                <p>Hospitalization <span *ngIf='comparar && this.compareArray.length === 2'
+                                        [ngClass]="compararDosEstadosHosp(i)">(% {{coun?.getHospPerc() |
+                                        number:'1.2-2'}} )</span></p>
                                 <!-- <p>Cases <span *ngIf='comparar' [ngClass]="compareArray[0]?.getCasePerc() > compareArray[1]?.getCasePerc() ? 'verde':'rojo'">(% {{coun?.getCasePerc() | number:'1.2-2'}} )</span></p> -->
                             </ng-template>
                             <p><b>Total Hospitalizated:</b>{{coun.getHospitalizedCumulative()}}</p>
@@ -96,20 +80,16 @@
                 </div>
             </ng-container>
             <!-- Boton OK -->
-            
+
         </div>
         <div class="botonOk">
-            <p-button
-                [style]="{'background-color': 'white', 'color': 'blue', 'border':'none','align-self': 'flex-end'}"
-                icon="pi pi-check"
-                label="ok" 
-                severity="success" 
-                (onClick)="resetArray()" >
+            <p-button [style]="{'background-color': 'white', 'color': 'blue', 'border':'none','align-self': 'flex-end'}"
+                icon="pi pi-check" label="ok" severity="success" (onClick)="resetArray()">
             </p-button>
         </div>
     </p-dialog>
     <!-- mensage de alerta hacer con toast -->
     <p-toast></p-toast>
-    
+
 </div>
 <!-- <router-outlet></router-outlet> -->

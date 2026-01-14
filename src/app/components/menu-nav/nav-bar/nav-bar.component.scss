@@ -1,4 +1,4 @@
-div{
+div {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -6,18 +6,26 @@ div{
     flex-direction: column;
     align-items: center;
 }
-p-table{
+
+article {
+    height: 100% !important;
+    text-align: center;
+}
+
+p-table {
     width: 99%;
 }
-.nombreEstado{
+
+.nombreEstado {
     font-size: 1.5rem;
     font-weight: bold;
 }
-::ng-deep{
-    .ancho{
+
+::ng-deep {
+    .ancho {
         max-width: fit-content !important;
 
-        i{
+        i {
             width: 1.3rem;
             background-color: red;
             border-radius: 11px;
@@ -26,27 +34,48 @@ p-table{
         }
     }
 
-    .dialogContent{
+    .dialogContent {
         display: flex !important;
         flex-direction: row !important;
         align-items: baseline !important;
     }
-    .botonOk{
-        align-items:end !important;
+
+    .botonOk {
+        align-items: end !important;
     }
-    p-accordion{
+
+    p-accordion {
         margin-left: 10px !important;
         height: 75% !important;
     }
-    p-button{
+
+    p-button {
         margin-top: 10px;
     }
-    
+
+    .p-paginator .p-paginator-pages .p-paginator-page {
+        background-color: #f0f0f0; // Color de fondo
+        border: 1px solid #ddd; // Añadir borde
+        color: #333; // Color del texto
+        min-width: 1.5rem; // Cambiar tamaño
+        height: 1.5rem;
+        margin: 0.5rem;
+        border-radius: 20px; // Cambiar de circular a redondeado
+    }
+
+    .p-paginator .p-paginator-first,
+    .p-paginator .p-paginator-prev,
+    .p-paginator .p-paginator-next,
+    .p-paginator .p-paginator-last {
+        min-width: 1rem;
+    }
+
 }
 
-.rojo{
-        color:red;
-    }
-.verde{
+.rojo {
+    color: red;
+}
+
+.verde {
     color: rgb(60, 233, 60);
 }
