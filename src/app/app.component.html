@@ -1,9 +1,9 @@
-
-<div [ngSwitch]="selectedNavBar" class="nav">
-    <app-nav-bar  *ngSwitchCase="'default'"></app-nav-bar>
-    <app-layers  *ngSwitchCase="'layers'"></app-layers>
-    <app-area-calc  *ngSwitchCase="'areaCalc'"></app-area-calc>
-    <app-nav-bar  *ngSwitchDefault></app-nav-bar>
+<!-- <button (click)="viewMenu = viewMenu ? false : true" class="navMenu">Menu</button> -->
+<div *ngIf="viewMenu" [ngSwitch]="selectedNavBar" class="nav">
+    <app-nav-bar *ngSwitchCase="'default'"></app-nav-bar>
+    <app-layers *ngSwitchCase="'layers'"></app-layers>
+    <app-area-calc *ngSwitchCase="'areaCalc'"></app-area-calc>
+    <app-nav-bar *ngSwitchDefault></app-nav-bar>
 </div>
 
 <!-- <app-nav-bar class="nav" *ngIf="viewStates"></app-nav-bar>

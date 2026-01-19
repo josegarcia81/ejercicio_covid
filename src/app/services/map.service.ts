@@ -6,10 +6,10 @@ import { fromLonLat } from 'ol/proj';
 import OSM from 'ol/source/OSM';
 import View from 'ol/View';
 // Controles del mapa
-import { defaults } from 'ol/control/defaults'
 import Zoom from 'ol/control/Zoom'
 import GeoJSON from 'ol/format/GeoJSON';
 import Draw from 'ol/interaction/Draw'
+import { defaults } from 'ol/interaction/defaults'
 import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
@@ -33,6 +33,9 @@ export class MapService {
 
   private layerVisibilitySubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
   public layerVisibility$ = this.layerVisibilitySubject.asObservable();
+
+  private menuSubject: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
+  public menu$ = this.menuSubject.asObservable();
 
 
   constructor() { }
@@ -60,8 +63,10 @@ export class MapService {
           source: new OSM()
         })
       ],
-      target: 'map'
-      // controls: defaults({attribution: false}).extend(mapControls)
+      target: 'map',
+      interactions: defaults({
+        doubleClickZoom: false
+      })
     });
 
     // Se devuelve el mapa //
@@ -97,11 +102,19 @@ export class MapService {
   /**
    * Description Alternar la visibilidad de una capa.
    *
-   * @param {*} layer 
-   * @param {number} i 
+   * @param {*} layer
    */
   toggleLayerVisibility(layer: any) {
     this.layerVisibilitySubject.next(layer);
+  }
+
+  /**
+   * Description Alternar la visibilidad del menu.
+   *
+   * @param {boolean} menu 
+   */
+  toggleMenu(menu: boolean) {
+    this.menuSubject.next(menu);
   }
 
 }

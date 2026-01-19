@@ -5,7 +5,7 @@
 
 <!-- p-autocomplete - Filter de primeng para filtrar/buscar -->
 
-
+<button (click)="toggleMenu()" class="navMenu">Menu</button>
 <!-- div para el mapa -->
 <div id="map" class="map">
     <p-autoComplete [(ngModel)]="selectedState" [suggestions]="filteredStates" (completeMethod)="searchStates($event)"

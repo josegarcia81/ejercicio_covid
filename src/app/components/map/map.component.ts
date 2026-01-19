@@ -11,6 +11,7 @@ import { StateInfo } from '../../models/StateInfo.model';
 // SERVICIOS //
 import { CovidDataService } from '../../services/covid-data.service';
 import { MapService } from '../../services/map.service';
+import { MenusService } from 'src/app/services/menus.service';
 
 // LIBRERIA OL //
 import Map from "ol/Map";
@@ -91,6 +92,8 @@ export class MapComponent implements OnInit, AfterViewInit {
   private drawInteraction!: Draw;
   private featureUno!: Feature<Geometry>;
   private featureDos!: Feature<Geometry>;
+  private tool: string = 'none';
+  private drawedInteractionFeature!: Feature<Geometry>;
 
   // Eliminar Poligono
   private estadosTocadosArray: Array<Feature> = []
@@ -121,10 +124,13 @@ export class MapComponent implements OnInit, AfterViewInit {
   private drawArrayLength: number = 0;
   public filteredStates!: string[];
 
+  // boton menu
+  public viewMenu: boolean = false; // Variable para controlar el menu
+
   constructor(
     private _covidData: CovidDataService, // Datos de la API
     private _mapService: MapService, // Mapa
-    private cd: ChangeDetectorRef
+    private _menusService: MenusService // Menus
   ) { }
 
   ngOnInit(): void {
@@ -202,7 +208,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.letreroTextoOverlay.setPosition(e.coordinate);
         // Setear el nombre del feature en el overlay
         this.etiqueta.innerHTML = featureName?.[0];
-        //this.cd.detectChanges();
+
         // Cambia el tipo de puntero a MANO //
         this.map.getViewport().style.cursor = 'pointer';
       } else {
@@ -525,35 +531,176 @@ export class MapComponent implements OnInit, AfterViewInit {
         // this.polIndex++;
         // console.log('Toggle:',this.isDrawing)
         if (active) {
+          this.tool = 'draw';
           this.map.addInteraction(this.drawInteraction);
           console.log('Activando interaction', this.map.getInteractions());
         } else {
           this.map.removeInteraction(this.drawInteraction);
           console.log('Desactivando interaction', this.map.getInteractions());
-
+          this.tool = 'none';
         }
       }
     })
+
     this.drawInteraction.on('drawend', (e: any) => {
       e.feature.set('name', 'pol_' + this.polIndex);
       e.feature.set('id', this.polIndex);
       this.polIndex++;
       e.feature.set('__originalStyle', styleArray[0].polygon);
-      // console.log('Dibujado Draw:', e.feature.getGeometry().getCoordinates());
+      console.log('OOOOOOOOOOOOOOOOOOOO:', e);
+      // Longitud del array de poligonos dibujados
+      let length = this.drawnVectorSource.getFeatures().length - 1;
+      console.log('Length of drawnVectorSource:', length)
+      // Feature dibujada
+      let drawedFeature = e.feature;
+      // Extent del feature dibujado
+      let extent = drawedFeature.getGeometry()!.getExtent();
 
-      // Recogida de coodenadas para los arrays de X e Y para el metodo de area
-      let coords = e.feature.getGeometry().getCoordinates();
-      let coordsX: number[] = [];
-      let coordsY: number[] = [];
-      coords[0].forEach((coordSet: any) => {
-        // console.log('Coordenadas X del poligono dibujado:',coordSet[0]);
-        coordsX.push(coordSet[0]);
-        // console.log('Coordenadas Y del poligono dibujado:',coordSet[1]);
-        coordsY.push(coordSet[1]);
-      });
-      let area = this.calculatePolygonArea(coordsX, coordsY);
-      this._mapService.setPolygonArea(area);
-      console.log('Area del poligono dibujado:', area, 'm²');
+
+      switch (this.tool) {
+        /////////////////
+        case 'draw':
+          console.log('Case Draw');
+
+          // Recogida de coodenadas para los arrays de X e Y para el metodo de area
+          let coords = e.feature.getGeometry().getCoordinates();
+          let coordsX: number[] = [];
+          let coordsY: number[] = [];
+          coords[0].forEach((coordSet: any) => {
+            // console.log('Coordenadas X del poligono dibujado:',coordSet[0]);
+            coordsX.push(coordSet[0]);
+            // console.log('Coordenadas Y del poligono dibujado:',coordSet[1]);
+            coordsY.push(coordSet[1]);
+          });
+          let area = this.calculatePolygonArea(coordsX, coordsY);
+          this._mapService.setPolygonArea(area);
+          console.log('Area del poligono dibujado:', area, 'm²');
+          // this.map.removeInteraction(this.drawInteraction);
+          break;
+
+        /////////////////
+        case 'substract':
+          console.log('Case Substract');
+          // this.tool = 'none'; // hacerlo en el toggle
+          // this.map.removeInteraction(this.drawInteraction);
+          console.log('drawArrayLength:', this.drawArrayLength);
+          console.log('drawnVectorSource.getFeatures().length:', this.drawnVectorSource.getFeatures().length);
+          // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
+          // if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
+          //   console.log('No se ha creado un nuevo poligono');
+          //   return;
+          // }
+          // let index = this.drawnVectorSource.getFeatures().length - 1;
+          console.log('Index of drawnFeature:', length)
+          // const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
+          // const drawedFeature = e.feature;
+          // const extent = drawedFeature.getGeometry()!.getExtent();
+
+          this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+            console.log('Poligono intersecta', feature.get('name'));
+            console.log('FeatureTocada corte por poligonos:', feature);
+            if (feature?.get('name') !== drawedFeature.get('name')) {
+              this.cortarPoligonoConPoligono(feature, drawedFeature, 'substract');
+            }
+            // return feature;
+          }) || null;
+          this.tool = 'none';
+          console.log(this.controlBar);
+          // this.controlBar.getC
+          // Desactivar Interaccion
+          this.map.removeInteraction(this.drawInteraction);
+          // this.drawedInteractionFeature = drawedFeature;
+          console.log(this.controlBar.getControlsByName('cutPolygonsBetween'));
+          this.controlBar.getControlsByName('cutPolygonsBetween')[0].setActive(false);
+          // Se utiliza un timeout para que se pueda eliminar el poligono
+          setTimeout(() => { this.drawnVectorSource.removeFeature(drawedFeature) }, 0.1);
+          // Se activa el toggle de nuevo para que se pueda dibujar otro poligono
+          // this.controlBar.getControlsByName('cutPolygonsBetween')[0].toggle();
+
+          break;
+
+        /////////////////
+        /* Unir poligonos al acabar de pintar pero NO desactiva la herramienta ni la interaccion
+        *  puedes seguir uniendo poligonos
+        */
+        case 'unite':
+          console.log('Case unite');
+          // console.log(this.controlBar.getControlsByName("unitePolygonsBetween"));
+          // // Desactivar Interaccion
+          // this.map.removeInteraction(this.drawInteraction);
+          // // this.drawedInteractionFeature = drawedFeature;
+          // console.log(this.controlBar.getControlsByName('unitePolygonsBetween'));
+          // this.controlBar.getControlsByName('unitePolygonsBetween')[0].setActive(false);
+          // Se utiliza un timeout para que se pueda eliminar el poligono
+          // setTimeout(() => { this.drawnVectorSource.removeFeature(drawedFeature) }, 0.1);
+          // setTimeout(() => { this.controlBar.getControlsByName("unitePolygonsBetween")[0].setActive(false) }, 5000);
+
+          // // let index = this.drawnVectorSource.getFeatures().length - 1;
+          // console.log('Index of lastDrawnFeature:', length)
+
+          // for (let i = length; i >= 0; i--) {
+          //   console.log('CASE UNITE i:', i);
+          //   // console.log(index, feature.get('name'));
+          //   const lastFeature = this.drawnVectorSource.getFeatures()[i]; // Probar con byId
+          //   // const extent = lastFeature.getGeometry()!.getExtent();
+
+          //   const featureTocada: Feature<Geometry> | null = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+          //     console.log('Poligono intersecta', feature.get('name'));
+          //     return feature;
+          //   }) || null;
+          //   console.log('FeatureTocada corte por poligonos:', featureTocada);
+          //   this.unirPoligonoConPoligono(featureTocada, lastFeature);
+          //   // this.drawnVectorSource.removeFeature(lastFeature);
+          //   // if (featureTocada!.getGeometry()!.getExtent() === lastFeature.getGeometry().getExtent()) {
+          //   //   console.log('EXTENT IGUALES');
+          //   //   this.drawnVectorSource.removeFeature(featureTocada!);
+          //   //   return;
+          //   // }
+          // }
+          // if (length < 2) {
+          // }
+          // setTimeout(() => { this.drawnVectorSource.removeFeature(drawedFeature) }, 0.1);
+          break;
+
+        /////////////////
+        /* Excluir parte de poligonos al acabar de pintar, NO desactiva la herramienta ni la interaccion
+        *  puedes seguir excluyendo poligonos
+        */
+        case 'exclude':
+          console.log('Case Exclude');
+
+          // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
+          // if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
+          //   return;
+          // }
+
+          const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+            console.log('Poligono intersecta', feature.get('name'));
+            return feature;
+          }) || null;
+          console.log('FeatureTocada corte por poligonos:', featureTocada);
+          // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
+          if (featureTocada?.get('name') !== drawedFeature.get('name')) {
+            this.cortarPoligonoConPoligono(featureTocada, drawedFeature, 'exclude');
+          } else {
+            alert('Es el mismo poligono o no intersecta ningun poligono!!!')
+          }
+
+          // Desactivar Interaccion
+          this.map.removeInteraction(this.drawInteraction);
+
+          // Se utiliza un timeout para que se pueda eliminar el poligono
+          setTimeout(() => { this.drawnVectorSource.removeFeature(drawedFeature) }, 0.1);
+          // Desactivar toggle
+          this.controlBar.getControlsByName('excludePolygonsBetween')[0].setActive(false);
+          break;
+        /////////////////
+        default:
+          console.log('No se ha usado ninguna herramienta');
+          break;
+      }
+
+
     })
     // Aniadir toggle a barra principal.
     this.controlBar.addControl(drawPolygon)
@@ -563,7 +710,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       source: this.drawVectorLayer.getSource()!,
       style: styleArray[0].polygon
     });
-    // Botton Modificar Poligono
+    // Botton Modificar Perimetro Poligono
     // const drawInteraction = arrayInteractions[0].draw
     const modifyPolygon = new Toggle({
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minimize2-icon lucide-minimize-2"><path d="m14 10 7-7"/><path d="M20 10h-6V4"/><path d="m3 21 7-7"/><path d="M4 14h6v6"/></svg>',
@@ -576,6 +723,8 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.isDrawing = active;
         this.subControlBar.setVisible(false);
         this.modificado = true;
+        this.map.removeInteraction(this.drawInteraction);
+        this.map.removeInteraction(this.cutInteraction);
         //this._covidData.setOriginalStyles(true)
       }
     })
@@ -603,7 +752,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         return layer === this.drawVectorLayer
       }
     })
-    // Botton Transformar Poligono
+    // Botton Transformar/Mover Poligono
     const transformPolygon = new Toggle({
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-expand-icon lucide-expand"><path d="m15 15 6 6"/><path d="m15 9 6-6"/><path d="M21 16v5h-5"/><path d="M21 8V3h-5"/><path d="M3 16v5h5"/><path d="m3 21 6-6"/><path d="M3 8V3h5"/><path d="M9 9 3 3"/></svg>',
       className: 'ctrl-button',
@@ -613,6 +762,8 @@ export class MapComponent implements OnInit, AfterViewInit {
       onToggle: (active: any) => {
         this.subControlBar.setVisible(false);
         this.isDrawing = active
+        this.map.removeInteraction(this.drawInteraction);
+        this.map.removeInteraction(this.cutInteraction);
         if (active && this.featureSeleccionada) {
           this.transformInteraction.select(this.featureSeleccionada);
           console.log('Feature seleccionada:', this.featureSeleccionada);
@@ -659,6 +810,7 @@ export class MapComponent implements OnInit, AfterViewInit {
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scissors-icon lucide-scissors"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>',
       className: 'ctrl-button',
       title: 'Cut Polygon',
+      name: 'cutPolygon',
       // interaction: this.cutInteraction,
       active: false,
       onToggle: (active: any) => {
@@ -668,31 +820,33 @@ export class MapComponent implements OnInit, AfterViewInit {
           console.log('Entrando En Toggle');
           this.map.removeInteraction(this.cutInteraction);
           // console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures().length);
-          if (this.drawnVectorSource.getFeatures().length > 0) {
-            console.log('Entrando En Toggle Si hay features');
-            const features = this.lineVectorSource.getFeatures();
-            const lineaCorte = features.find(feature => feature.get('name') === 'lineaDeCorte');
-            console.log(lineaCorte);
-            //console.log(this.lineVectorSource.getFeatures());
-            // const poligono = this.drawnVectorSource.getFeatures()[this.drawnVectorSource.getFeatures().length];
-            if (!!lineaCorte) {
-              const extent = lineaCorte.getGeometry()!.getExtent();
-              this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
-                console.log('Poligono intersecta', feature.get('name'));
-                // this.cortarPoligonosConLinea(lineaCorte,feature)
-                this.cortarPoligonosConLinea(lineaCorte, feature);
-                // return feature;
-              }) || null;
 
-            }
-            // if(lineaCorte){;}
-          }
+          ///////////////////
+          // if (this.drawnVectorSource.getFeatures().length > 0) {
+          //   console.log('Entrando En Toggle Si hay features');
+          //   const features = this.lineVectorSource.getFeatures();
+          //   const lineaCorte = features.find(feature => feature.get('name') === 'lineaDeCorte');
+          //   console.log(lineaCorte);
+          //   //console.log(this.lineVectorSource.getFeatures());
+          //   // const poligono = this.drawnVectorSource.getFeatures()[this.drawnVectorSource.getFeatures().length];
+          //   if (!!lineaCorte) {
+          //     const extent = lineaCorte.getGeometry()!.getExtent();
+          //     this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+          //       console.log('Poligono intersecta', feature.get('name'));
+          //       // this.cortarPoligonosConLinea(lineaCorte,feature)
+          //       this.cortarPoligonosConLinea(lineaCorte, feature);
+          //       // return feature;
+          //     }) || null;
+
+          //   }
+          // if(lineaCorte){;}
+          // }
         } else {
           this.map.removeInteraction(this.drawInteraction);
           this.map.addInteraction(this.cutInteraction);
 
         }
-        this.lineVectorSource.clear();
+        // this.lineVectorSource.clear();
       }
 
     });
@@ -701,12 +855,37 @@ export class MapComponent implements OnInit, AfterViewInit {
       const lineaDeCorte = e.feature as Feature<LineString>;
       // lineaDeCorte.setStyle(styleArray[0].line);
       lineaDeCorte.set('name', 'lineaDeCorte');
-      // console.log('Linea de corte:', lineaDeCorte);
-      //console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures());
-      // Llamar funcion cortar poligonos
-      // this.cortarPoligonos(e.feature);
-      // this.isDrawing = false;
-    })
+
+      if (this.drawnVectorSource.getFeatures().length > 0) {
+        console.log('Entrando En Toggle Si hay features');
+        // const features = this.lineVectorSource.getFeatures();
+        // const lineaCorte = features.find(feature => feature.get('name') === 'lineaDeCorte');
+
+        console.log(lineaDeCorte);
+        //console.log(this.lineVectorSource.getFeatures());
+        // const poligono = this.drawnVectorSource.getFeatures()[this.drawnVectorSource.getFeatures().length];
+        if (!!lineaDeCorte) {
+          const extent = lineaDeCorte.getGeometry()!.getExtent();
+          this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+            console.log('Poligono intersecta', feature.get('name'));
+            // this.cortarPoligonosConLinea(lineaCorte,feature)
+            this.cortarPoligonosConLinea(lineaDeCorte, feature);
+            // return feature;
+          }) || null;
+
+        }
+
+        // console.log('Linea de corte:', lineaDeCorte);
+        //console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures());
+        // Llamar funcion cortar poligonos
+        // this.cortarPoligonos(e.feature);
+        // this.isDrawing = false;
+      }
+      this.controlBar.getControlsByName('cutPolygon')[0].setActive(false);
+      this.map.removeInteraction(this.cutInteraction);
+      this.map.removeInteraction(this.drawInteraction);
+      setTimeout(() => this.lineVectorSource.clear(), 0.1);
+    });
     // Aniadir a la barra pricipal
     this.controlBar.addControl(cutPolygon);
 
@@ -722,12 +901,15 @@ export class MapComponent implements OnInit, AfterViewInit {
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-subtract-icon lucide-squares-subtract"><path d="M10 22a2 2 0 0 1-2-2"/><path d="M16 22h-2"/><path d="M16 4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-5a2 2 0 0 1 2-2h5a1 1 0 0 0 1-1z"/><path d="M20 8a2 2 0 0 1 2 2"/><path d="M22 14v2"/><path d="M22 20a2 2 0 0 1-2 2"/></svg>',
       className: 'ctrl-button',
       title: 'Substract Polygons',
+      name: 'cutPolygonsBetween',
       active: false,
       onToggle: (active: any) => {
         this.subControlBar.setVisible(false);
         this.isDrawing = active;
+        console.log("TOGGLEEEEEEE")
         // this.drawArrayLength = this.drawnVectorSource.getFeatures().length;
         if (active) {
+          this.tool = 'substract';
           this.drawArrayLength = this.drawnVectorSource.getFeatures().length;
           console.log('drawArrayLength en if', this.drawArrayLength);
           this.subControlBar.setVisible(false);
@@ -740,24 +922,26 @@ export class MapComponent implements OnInit, AfterViewInit {
           // console.log('drawArrayLength', this.drawArrayLength);
           console.log('drawnVectorSource', this.drawnVectorSource.getFeatures().length);
           // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
-          if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
-            return;
-          }
-          let index = this.drawnVectorSource.getFeatures().length - 1;
-          console.log('Index of drwanFeature:', index)
-          const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
+          // if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
+          //   return;
+          // }
+          // let index = this.drawnVectorSource.getFeatures().length - 1;
+          // console.log('Index of drwanFeature:', index)
+          // const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
 
-          const extent = lastFeature.getGeometry()!.getExtent();
+          // const extent = lastFeature.getGeometry()!.getExtent();
 
-          this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
-            console.log('Poligono intersecta', feature.get('name'));
-            console.log('FeatureTocada corte por poligonos:', feature);
-            if (feature?.get('name') !== lastFeature.get('name')) {
-              this.cortarPoligonoConPoligono(feature, lastFeature, 'substract');
-            }
-            // return feature;
-          }) || null;
-
+          // this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+          //   console.log('Poligono intersecta', feature.get('name'));
+          //   console.log('FeatureTocada corte por poligonos:', feature);
+          //   if (feature?.get('name') !== lastFeature.get('name')) {
+          //     this.cortarPoligonoConPoligono(feature, lastFeature, 'substract');
+          //   }
+          //   // return feature;
+          // }) || null;
+          this.tool = 'none';
+          this.drawnVectorSource.removeFeature(this.drawedInteractionFeature);
+          console.log('drawnVectorSource', this.drawnVectorSource.getFeatures());
         }
 
 
@@ -771,11 +955,13 @@ export class MapComponent implements OnInit, AfterViewInit {
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-unite-icon lucide-squares-unite"><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 0 1 1h3a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-3a1 1 0 0 0-1-1z"/></svg>',
       className: 'ctrl-button',
       title: 'Unite Polygons',
+      name: 'unitePolygonsBetween',
       active: false,
       onToggle: (active: any) => {
         this.subControlBar.setVisible(false);
         this.isDrawing = active;
         if (active) {
+          this.tool = 'unite';
           // this.subControlBar.setVisible(false);
           // this.isDrawing = active;
           // Actualizar valor de drawArrayLength
@@ -785,10 +971,11 @@ export class MapComponent implements OnInit, AfterViewInit {
         } else {
           this.map.removeInteraction(this.drawInteraction);
           console.log('Desactivando interaction pintar', this.map.getInteractions());
+          this.tool = 'none';
           // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
-          if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
-            return;
-          }
+          // if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
+          //   return;
+          // }
           let index = this.drawnVectorSource.getFeatures().length - 1;
           console.log('Index of drawanFeature:', index)
 
@@ -806,9 +993,9 @@ export class MapComponent implements OnInit, AfterViewInit {
             this.unirPoligonoConPoligono(featureTocada, lastFeature);
           }
 
-          // this.drawnVectorSource.getFeatures().forEach((feature, index) => {
+          this.drawnVectorSource.getFeatures().forEach((feature, index) => {
 
-          // })
+          })
 
         }
       }
@@ -821,11 +1008,13 @@ export class MapComponent implements OnInit, AfterViewInit {
       html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-squares-exclude-icon lucide-squares-exclude"><path d="M16 12v2a2 2 0 0 1-2 2H9a1 1 0 0 0-1 1v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h0"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3a1 1 0 0 1-1 1h-5a2 2 0 0 0-2 2v2"/></svg>',
       className: 'ctrl-button',
       title: 'Substract part of Polygon',
+      name: 'excludePolygonsBetween',
       active: false,
       onToggle: (active: any) => {
         this.subControlBar.setVisible(false);
         this.isDrawing = active;
         if (active) {
+          this.tool = 'exclude';
           // this.subControlBar.setVisible(false);
           // this.isDrawing = active;
           // Actualizar valor de drawArrayLength
@@ -833,28 +1022,29 @@ export class MapComponent implements OnInit, AfterViewInit {
           this.map.addInteraction(this.drawInteraction);
           console.log('Activando interaction pintar');
         } else {
+          this.tool = 'none';
           this.map.removeInteraction(this.drawInteraction);
           console.log('Desactivando interaction', this.map.getInteractions());
           // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
-          if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
-            return;
-          }
-          let index = this.drawnVectorSource.getFeatures().length - 1;
-          console.log('Index of drwanFeature:', index)
-          const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
+          // if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
+          //   return;
+          // }
+          // let index = this.drawnVectorSource.getFeatures().length - 1;
+          // console.log('Index of drwanFeature:', index)
+          // const lastFeature = this.drawnVectorSource.getFeatures()[index]; // Probar con byId
 
-          const extent = lastFeature.getGeometry()!.getExtent();
+          // const extent = lastFeature.getGeometry()!.getExtent();
 
-          const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
-            console.log('Poligono intersecta', feature.get('name'));
-            return feature;
-          }) || null;
-          console.log('FeatureTocada corte por poligonos:', featureTocada);
-          if (featureTocada?.get('name') !== lastFeature.get('name')) {
-            this.cortarPoligonoConPoligono(featureTocada, lastFeature, 'exclude');
-          } else {
-            alert('Es el mismo poligono o no intersecta ningun poligono!!!')
-          }
+          // const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
+          //   console.log('Poligono intersecta', feature.get('name'));
+          //   return feature;
+          // }) || null;
+          // console.log('FeatureTocada corte por poligonos:', featureTocada);
+          // if (featureTocada?.get('name') !== lastFeature.get('name')) {
+          //   this.cortarPoligonoConPoligono(featureTocada, lastFeature, 'exclude');
+          // } else {
+          //   alert('Es el mismo poligono o no intersecta ningun poligono!!!')
+          // }
         }
       }
     });
@@ -1069,6 +1259,14 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   }
 
+  /**
+   * Description Metodo para alternar la visibilidad del menu.
+   * @returns {any}
+   */
+  toggleMenu() {
+    this.viewMenu = !this.viewMenu;
+    this._menusService.toggleMenu(this.viewMenu);
+  }
 
   // Funciona ok.
   /** Description Subscribe que hace que se resetee el estilo de todos los estados */
@@ -1162,7 +1360,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
   // Otra opcion para el desplegable de estado.
   /**
-   * Description
+   * Description Metodo para buscar estados.  
    * @param {any} event
    * @returns {any}
    */
@@ -1179,7 +1377,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
 
   /**
-   * Description
+   * Description Metodo para seleccionar un estado desde el desplegable.
    * @param {any} event
    * @returns {any}
    */
@@ -1392,7 +1590,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Description placeholder
+   * Description Metodo para cortar poligonos con una linea
    *
    * @param {*} linea 
    * @param {*} poligono 
@@ -1647,6 +1845,8 @@ export class MapComponent implements OnInit, AfterViewInit {
     console.log('JSTS polGeometry-1', pol1Geometry);
     console.log('JSTS polGeometry-2', pol2Geometry);
 
+    let holes = pol2Geometry._holes;
+
     // Bordes de poligonos
     let bordePoligono1 = pol1Geometry.getBoundary();
     console.log('Borde-Pol1', bordePoligono1);
@@ -1661,29 +1861,56 @@ export class MapComponent implements OnInit, AfterViewInit {
       console.log('SI se cortan - SUBSTRACT');
       let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
       // let resultPol = OverlayOp.symDifference(pol1Geometry, pol2Geometry);
+      console.log('Resultado despues de OverlayOp resultPol', resultPol);
+
       let olPol = parser.write(resultPol);
       // Revisar porque crea multipolygon y necesito tipo polygon
-      console.log(olPol);
+      console.log('olPol despues de parsearlo a ol', olPol);
+      // Control para ver si es multipolygon
+      if (olPol.getType() === 'MultiPolygon') {
+        let newPolygons = olPol.getPolygons();
+        newPolygons.forEach((pol: any) => {
 
-      // const newPolygons = olPol.getPolygon(); // Cambio aqui quito ()
-      // console.log('newPolygons OL',newPolygons)
-      // Recorrer el array y crear features
+          let resultFeature = new Feature({
+            geometry: pol,
+            style: styleArray[0].polygon,
+            name: 'Pol_' + this.polIndex
+          })
+          this.polIndex++
+          resultFeature.set('__originalStyle', styleArray[0].polygon);
+          resultFeature.set('selected', false);
+          this.drawnVectorSource.addFeature(resultFeature);
+        })
+      } else {
+        let resultFeature = new Feature({
+          geometry: olPol,
+          style: styleArray[0].polygon,
+          name: 'Pol_' + this.polIndex
+        })
+        this.polIndex++
+        resultFeature.set('__originalStyle', styleArray[0].polygon);
+        resultFeature.set('selected', false);
+        this.drawnVectorSource.addFeature(resultFeature);
+      }
 
-      // olPol.forEach((pol:any)=>{
 
-      let resultFeature = new Feature({
-        geometry: olPol,
-        style: styleArray[0].polygon,
-        name: 'Pol_' + this.polIndex
-      })
-      this.polIndex++
-      resultFeature.set('__originalStyle', styleArray[0].polygon);
-      resultFeature.set('selected', false);
-      this.drawnVectorSource.addFeature(resultFeature);
+
+
+      // let resultFeature = new Feature({
+      //   geometry: olPol,
+      //   style: styleArray[0].polygon,
+      //   name: 'Pol_' + this.polIndex
       // })
+      // this.polIndex++
+      // resultFeature.set('__originalStyle', styleArray[0].polygon);
+      // resultFeature.set('selected', false);
+      // this.drawnVectorSource.addFeature(resultFeature);
+
 
       this.drawnVectorSource.removeFeature(pol1);
-      this.drawnVectorSource.removeFeature(pol2);
+      // this.map.updateSize();
+      // this.map.render();
+      console.log(this.map, this.drawnVectorSource.getFeatures(), pol2);
 
     } else if (cortan && tool === 'exclude') {
       console.log('SI se cortan - EXCLUDE');
@@ -1707,10 +1934,12 @@ export class MapComponent implements OnInit, AfterViewInit {
         resultFeature.set('__originalStyle', styleArray[0].polygon);
         resultFeature.set('selected', false);
         this.drawnVectorSource.addFeature(resultFeature);
+        console.log('Hola')
       })
 
       this.drawnVectorSource.removeFeature(pol1);
       this.drawnVectorSource.removeFeature(pol2);
+
     } else {
       console.log('NO se cortan los bordes, es Interior');
       let resultPol = OverlayOp.difference(pol1Geometry, pol2Geometry);
@@ -1773,22 +2002,43 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     let olPol = parser.write(resultPol);
 
-    let resultFeature = new Feature({
-      geometry: olPol as Polygon,
-      style: styleArray[0].polygon,
-      name: 'Pol_' + this.polIndex
-    })
-    this.polIndex++
+    if (olPol.getType() === 'MultiPolygon') {
+      let newPolygons = olPol.getPolygons();
+      newPolygons.forEach((pol: any) => {
 
-    resultFeature.set('__originalStyle', styleArray[0].polygon);
-    resultFeature.set('selected', false);
-    this.drawnVectorSource.addFeature(resultFeature);
+        let resultFeature = new Feature({
+          geometry: pol,
+          style: styleArray[0].polygon,
+          name: 'Pol_' + this.polIndex
+        })
+        this.polIndex++
+        resultFeature.set('__originalStyle', styleArray[0].polygon);
+        resultFeature.set('selected', false);
+        this.drawnVectorSource.addFeature(resultFeature);
+      })
+    } else {
+      let resultFeature = new Feature({
+        geometry: olPol,
+        style: styleArray[0].polygon,
+        name: 'Pol_' + this.polIndex
+      })
+      this.polIndex++
+      resultFeature.set('__originalStyle', styleArray[0].polygon);
+      resultFeature.set('selected', false);
+      this.drawnVectorSource.addFeature(resultFeature);
+    }
 
     this.drawnVectorSource.removeFeature(pol1);
     this.drawnVectorSource.removeFeature(pol2);
 
   }
 
+  /**
+   * Description Metodo para calcular el area de un poligono
+   * @param {number[]} xCoords
+   * @param {number[]} yCoords
+   * @returns {any}
+   */
   calculatePolygonArea(xCoords: number[], yCoords: number[]): number {
     let area = 0;
     const numPoints = xCoords.length;
@@ -1800,119 +2050,6 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     return Math.abs(area / 2);
   }
-
-
-  // drawPoligon(drawInteraction:any){
-  //   // Al clickar boton activamos la interaccion
-  //   // const drawInteraction = arrayInteractions[0].draw
-  //   // this.map.addInteraction(drawInteraction);
-  //   // const interactions = this.map.getInteractions();
-
-  //   this.bluePolygon = drawInteraction
-
-
-
-  //   // Al al finalizar de pintar //
-  //   drawInteraction.on('drawend', (e:any)=>{
-  //     // crear nuevo geoJson OL
-  //     const formatGJ = new GeoJSON();
-  //     const drawnGJ = formatGJ.writeFeature(e.feature);
-  //     const drawnFeatures = formatGJ.readFeatures(drawnGJ)
-
-  //     // Aniado el feature al Vector
-  //     // this.polygonUno =  new VectorSource({
-  //     //   features: drawnFeatures,
-  //     // })
-
-  //     // Capa con el poligono 
-  //     // const bluePolygons = new VectorLayer({
-  //     //   source: this.polygonUno,
-  //     //   style: styleArray[0].polygon,
-  //     //   visible: true,
-  //     //   zIndex: 2
-  //     // })
-
-  //     // console.log(e.feature.getGeometry());
-  //     // console.log(e.feature);
-  //     // Parseo a Polygon para acceder a sus métodos
-  //     const polygon = e.feature.getGeometry() as Polygon
-
-  //     let centerCoords = polygon.getInteriorPoint().getCoordinates();
-
-  //     this.map.getView().animate({center: centerCoords}, {zoom: 5},{duration: 600})
-  //     // console.log(centerCoords);
-  //     // this.map.addLayer(bluePolygons);
-  //     this.map.removeInteraction(drawInteraction);
-
-  //     const layerExtentA = polygon.getExtent();
-  //     //console.log('Extent: ',layerExtentA)
-
-
-  //     const estadosTocados:Array<Feature>= []
-
-  //     this.usSource.forEachFeatureInExtent(layerExtentA, (feature: Feature)=>{
-
-  //       // COMPARACION CON EXTENT //
-  //       // const layerExtentB = feature.getGeometry()?.getExtent()
-
-  //       // if (polygon.intersectsExtent(layerExtentB!)) {
-
-  //       //   estadosTocados.push(feature);
-  //       //   // Colorear de rosa los estados coincidentes con el poligono
-  //       //   feature.setStyle(styleArray[0].rosa);
-
-  //       //   this.statesInfo.forEach((state)=>{
-  //       //     if(state.name === feature.get('ste_name')[0]){
-  //       //       this._covidData.setSelectedState(state.state)
-  //       //       state.selected = true;
-  //       //     }
-  //       //   })
-  //       // }
-
-  //       // COMPARACION CON LIBRERIA TURF //
-
-  //       // GeoJSON del polígono dibujado (en lon/lat EPSG:4326) — compatible con Turf
-  //       const drawnGeoJSON = formatGJ.writeFeatureObject(e.feature, {
-  //         featureProjection: this.map.getView().getProjection(),
-  //         dataProjection: 'EPSG:4326'
-  //       });
-
-  //       // convertir la feature del estado a GeoJSON en EPSG:4326 para Turf
-  //       const stateGeoJSON = formatGJ.writeFeatureObject(feature, {
-  //         featureProjection: this.map.getView().getProjection(),
-  //         dataProjection: 'EPSG:4326'
-  //       });
-
-  //       try {
-  //         if (booleanIntersects(drawnGeoJSON as any, stateGeoJSON as any)) {
-
-  //           estadosTocados.push(feature);
-
-  //           feature.setStyle(styleArray[0].rosa); // colorear
-  //           //feature.set('__selected', true);
-
-  //           this.statesInfo.forEach((state)=>{
-  //             if(state.name === feature.get('ste_name')[0]){
-  //               this._covidData.setSelectedState(state.state)
-  //               state.selected = true;
-  //             }
-  //           })
-  //         }
-  //       } catch (err) {
-  //           console.warn('Intersection test failed', err);
-  //         }
-
-  //     })
-  //     // console.log('Features nueva: ',this.polygonUno.getFeatures())
-  //     // console.log('Features estados: ',this.usSource.getFeatures())
-  //     // console.log('Coinciden Array: ', estadosTocados)
-  //   })
-
-
-  //   // this.map.getView().animate({center: fromLonLat([lon,lat])}, {zoom: 5})
-  // }
-
-
 
   // // Yo tenia esto que me instale tambien ol-ext
   // mapControls: Bar = new Bar({

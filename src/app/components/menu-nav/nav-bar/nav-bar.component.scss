@@ -19,6 +19,8 @@ p-table {
 .nombreEstado {
     font-size: 1.5rem;
     font-weight: bold;
+    margin-bottom: -0.5rem;
+    width: max-content;
 }
 
 ::ng-deep {
@@ -61,17 +63,69 @@ p-table {
         height: 1.5rem;
         margin: 0.5rem;
         border-radius: 20px; // Cambiar de circular a redondeado
+
+        .p-paginator-first,
+        .p-paginator .p-paginator-prev,
+        .p-paginator .p-paginator-next,
+        .p-paginator .p-paginator-last {
+            min-width: 1rem;
+        }
     }
 
-    .p-paginator .p-paginator-first,
-    .p-paginator .p-paginator-prev,
-    .p-paginator .p-paginator-next,
-    .p-paginator .p-paginator-last {
-        min-width: 1rem;
+    .p-dialog {
+        max-height: 99vh !important;
+        position: absolute;
+        left: -8vw;
+
+        .p-dialog-content {
+            width: fit-content !important;
+            border-radius: 0px 0px 0px 10px !important;
+            max-width: 80vw;
+
+        }
+    }
+
+    .p-dialog-draggable .p-dialog-header {
+        width: fit-content !important;
+    }
+
+    .p-accordion {
+        .p-accordion-header:not(.p-disabled).p-highlight .p-accordion-header-link {
+            padding: .5rem !important;
+            margin-bottom: .2rem !important;
+
+        }
+
+        .p-accordion-header-link .p-accordion-toggle-icon {
+            margin-right: 0.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .p-accordion-content {
+            padding-right: .2rem !important;
+            padding-left: .2rem !important;
+            padding-bottom: .2rem !important;
+            padding-top: .2rem !important;
+            width: max-content !important;
+            border: none !important;
+        }
+    }
+
+    .p-dialog-mask {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        pointer-events: none;
     }
 
 }
 
+// Fin ::ng-deep
 .rojo {
     color: red;
 }

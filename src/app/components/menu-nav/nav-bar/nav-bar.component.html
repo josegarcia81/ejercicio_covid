@@ -44,7 +44,7 @@
         <div class="dialogContent">
             <ng-container *ngFor="let coun of compareArray; let i = index">
                 <div class="col flex align-items-center justify-content-center">
-                    <p-accordion [activeIndex]="[0,1]" [multiple]="true">
+                    <p-accordion [activeIndex]="[0,1,2]" [multiple]="true">
                         <div *ngIf="comparar">
                             <p class="nombreEstado">{{coun.getStateName()}}<span
                                     *ngIf='comparar && this.compareArray.length === 2'> %</span></p>
@@ -61,7 +61,7 @@
                             </ng-template>
                             <!-- <p>{{ comparar ? (getPorcentaje(coun) | number:'1.0-1') + '%' : '' }}</p> -->
                             <p><b>Total Cases:</b> {{coun.getTotal()}}</p>
-                            <p><b>New Cases Today:</b>{{coun.getPositiveIncrease()}}</p>
+                            <p><b>New Cases Today:</b> {{coun.getPositiveIncrease()}}</p>
                         </p-accordionTab>
                         <p-accordionTab>
                             <ng-template pTemplate="header">
@@ -70,11 +70,11 @@
                                         number:'1.2-2'}} )</span></p>
                                 <!-- <p>Cases <span *ngIf='comparar' [ngClass]="compareArray[0]?.getCasePerc() > compareArray[1]?.getCasePerc() ? 'verde':'rojo'">(% {{coun?.getCasePerc() | number:'1.2-2'}} )</span></p> -->
                             </ng-template>
-                            <p><b>Total Hospitalizated:</b>{{coun.getHospitalizedCumulative()}}</p>
-                            <p><b>New Hospitalizated:</b>{{coun.getHospitalizedCurrently()}}</p>
+                            <p><b>Total Hospitalizated:</b> {{coun.getHospitalizedCumulative()}}</p>
+                            <p><b>New Hospitalizated:</b> {{coun.getHospitalizedCurrently()}}</p>
                         </p-accordionTab>
                         <p-accordionTab header="Tests">
-                            <p><b>Total Tests:</b>{{coun.getTotalTestResults()}}</p>
+                            <p><b>Total Tests:</b> {{coun.getTotalTestResults()}}</p>
                         </p-accordionTab>
                     </p-accordion>
                 </div>

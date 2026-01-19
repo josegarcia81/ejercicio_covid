@@ -1,10 +1,11 @@
 .map {
   /* fill parent container (app-map) */
-  width: 100%;
+  width: 102%;
   height: 100%;
   display: block;
   position: relative;
   z-index: 0;
+  bottom: 2rem;
 }
 
 .letrero-info {
@@ -28,7 +29,7 @@
   .mapControls {
     position: absolute !important;
     top: unset !important;
-    bottom: 0.5rem;
+    bottom: 1.5rem;
     height: 2.4em;
     align-items: center;
     left: 0% !important;
@@ -59,8 +60,8 @@
 
   .sub-toolbar {
     position: absolute !important;
-    bottom: 10.7em !important;
-    height: 3.2em;
+    bottom: 13.1em !important;
+    height: 3.6em;
     align-items: center;
     left: 0rem !important;
     z-index: 1000000;
@@ -79,7 +80,6 @@
       background-color: white !important;
       color: blue;
       padding: 10px;
-      margin-left: 3px !important;
 
       svg {
         box-sizing: content-box !important;
@@ -92,9 +92,9 @@
 
   .sub-toolbar-2 {
     position: absolute !important;
-    bottom: 4rem !important;
+    bottom: 5rem !important;
     align-items: center;
-    left: 1.2rem !important;
+    left: 1.4rem !important;
     z-index: 1000000;
     pointer-events: auto;
     display: flex;
@@ -150,12 +150,12 @@
     position: absolute !important;
     z-index: 2;
     left: 3rem;
-    top: 0.5rem;
+    top: 1rem;
     box-shadow: -6px 6px 6px rgba(0, 0, 0, 0.3);
 
     .p-autocomplete-panel {
       min-width: 100%;
-      top: 3rem !important;
+      top: 1rem !important;
       left: 0rem !important;
     }
 
@@ -166,12 +166,25 @@
   }
 
   .ol-zoom {
-    top: 0.5em;
+    top: 1em;
     left: .5em;
     box-shadow: -5px 6px 6px rgba(0, 0, 0, 0.3);
   }
 
+  .ol-control button {
+    border-radius: 5px !important;
+    height: 1.75em !important;
+    width: 1.75rem !important;
+  }
+
+  .ol-control.ol-bar .ol-control {
+    margin: 0 !important;
+    // display: flex !important;
+  }
+
 }
+
+// Fin ::ng-deep
 
 .drawControls {
   position: absolute;
@@ -212,6 +225,20 @@
   left: 1em;
   background-color: rgba(250, 250, 250, 0.9);
   border-radius: 10px;
+}
+
+// Boton menu
+.navMenu {
+  width: 75px;
+  height: 26px;
+  position: relative;
+  top: 7rem;
+  left: .5rem;
+  z-index: 1000;
+  background-color: #ffffff;
+  border-radius: 10px;
+  border: none;
+  box-shadow: -6px 6px 6px rgba(0, 0, 0, 0.3);
 }
 
 // .sub-toolbar.ol-control{
