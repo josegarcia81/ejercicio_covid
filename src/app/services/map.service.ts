@@ -21,6 +21,9 @@ export class MapService {
   public map!: Map;
   public layers: any[] = [];
 
+  public lineVectorSource: any;
+  public drawnVectorSource: any;
+
 
   private layerArraySubject: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([{ name: 'Cargando...', selected: false }]);
   public layerArray$ = this.layerArraySubject.asObservable();

@@ -75,11 +75,11 @@ p-table {
     .p-dialog {
         max-height: 99vh !important;
         position: absolute;
-        left: -8vw;
+        // left: -8vw;
 
         .p-dialog-content {
             width: fit-content !important;
-            border-radius: 0px 0px 0px 10px !important;
+            border-radius: 0px 6px 6px 10px !important;
             max-width: 80vw;
 
         }

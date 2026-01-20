@@ -3,6 +3,10 @@ import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewCh
 
 // VARIABLES COMUNES //
 import { styleArray } from '../../shared/styles';
+import { arrayInteractions } from '../../shared/interactions';
+
+// TOOLS
+
 
 // MODELOS //
 import { CovidData } from '../../models/CovidData.model';
@@ -618,61 +622,12 @@ export class MapComponent implements OnInit, AfterViewInit {
           // this.controlBar.getControlsByName('cutPolygonsBetween')[0].toggle();
 
           break;
-
-        /////////////////
-        /* Unir poligonos al acabar de pintar pero NO desactiva la herramienta ni la interaccion
-        *  puedes seguir uniendo poligonos
-        */
-        case 'unite':
-          console.log('Case unite');
-          // console.log(this.controlBar.getControlsByName("unitePolygonsBetween"));
-          // // Desactivar Interaccion
-          // this.map.removeInteraction(this.drawInteraction);
-          // // this.drawedInteractionFeature = drawedFeature;
-          // console.log(this.controlBar.getControlsByName('unitePolygonsBetween'));
-          // this.controlBar.getControlsByName('unitePolygonsBetween')[0].setActive(false);
-          // Se utiliza un timeout para que se pueda eliminar el poligono
-          // setTimeout(() => { this.drawnVectorSource.removeFeature(drawedFeature) }, 0.1);
-          // setTimeout(() => { this.controlBar.getControlsByName("unitePolygonsBetween")[0].setActive(false) }, 5000);
-
-          // // let index = this.drawnVectorSource.getFeatures().length - 1;
-          // console.log('Index of lastDrawnFeature:', length)
-
-          // for (let i = length; i >= 0; i--) {
-          //   console.log('CASE UNITE i:', i);
-          //   // console.log(index, feature.get('name'));
-          //   const lastFeature = this.drawnVectorSource.getFeatures()[i]; // Probar con byId
-          //   // const extent = lastFeature.getGeometry()!.getExtent();
-
-          //   const featureTocada: Feature<Geometry> | null = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
-          //     console.log('Poligono intersecta', feature.get('name'));
-          //     return feature;
-          //   }) || null;
-          //   console.log('FeatureTocada corte por poligonos:', featureTocada);
-          //   this.unirPoligonoConPoligono(featureTocada, lastFeature);
-          //   // this.drawnVectorSource.removeFeature(lastFeature);
-          //   // if (featureTocada!.getGeometry()!.getExtent() === lastFeature.getGeometry().getExtent()) {
-          //   //   console.log('EXTENT IGUALES');
-          //   //   this.drawnVectorSource.removeFeature(featureTocada!);
-          //   //   return;
-          //   // }
-          // }
-          // if (length < 2) {
-          // }
-          // setTimeout(() => { this.drawnVectorSource.removeFeature(drawedFeature) }, 0.1);
-          break;
-
         /////////////////
         /* Excluir parte de poligonos al acabar de pintar, NO desactiva la herramienta ni la interaccion
         *  puedes seguir excluyendo poligonos
         */
         case 'exclude':
           console.log('Case Exclude');
-
-          // Control de si se ha creado un nuevo poligono para aplicar el corte o no y no a plicarlo a otro poligono
-          // if (this.drawArrayLength === this.drawnVectorSource.getFeatures().length) {
-          //   return;
-          // }
 
           const featureTocada = this.drawnVectorSource.forEachFeatureIntersectingExtent(extent, (feature) => {
             console.log('Poligono intersecta', feature.get('name'));
@@ -1695,25 +1650,6 @@ export class MapComponent implements OnInit, AfterViewInit {
         this.drawnVectorSource.addFeature(newPolygon);
       }
 
-      //// Programacion para ver las lineas generadas ////
-      // Convertir poligono de jsts a Ol
-      // console.log(insideLines._geometries[0]);
-      // insideLines._geometries.forEach((geom:any)=>{
-      //   let line = parser.write(geom);
-      //   let newLine = new Feature({
-      //     geometry: line,
-      //     name:'Line_Prueba'
-      //   })
-      //   this.drawnVectorSource.addFeature(newLine);
-      // })
-      // const olLine = parser.write(insideLine._geometries[0]);
-      // let newLine = new Feature({
-      //   geometry: olLine,
-
-      //   name:'Line_Prueba'
-      // })
-      // this.drawnVectorSource.addFeature(newLine);
-
     }
     this.lineVectorSource.removeFeature(linea);
     // console.log('Linea de corte añadida al mapa',this.lineVectorSource.getFeatures());
@@ -2072,7 +2008,7 @@ export class MapComponent implements OnInit, AfterViewInit {
   //   });
 
   //   this.mapControls.addControl(this.mapControl); // mapControls.addControl es un metodo del objeto Bar
-  //   this.controls.push(this.mapControl);
+  //   
   // }
   // // y los llamaba asi 
   //   this.addControls(

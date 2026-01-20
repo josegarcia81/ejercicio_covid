@@ -5,16 +5,18 @@ import VectorSource from "ol/source/Vector";
 
 
 // Draw Interaction // Pintar en el mapa 
-    const drawInteraction = new Draw({
+const drawPolygonInteraction = new Draw({
     type: 'Polygon',
-    geometryName:'polygon'
-    })
+    geometryName: 'polygon'
+})
 
 // Borrar Polygono
-    const delPolygon = new Select({
-    })
+const drawLineInteraction = new Draw({
+    type: 'LineString',
+    geometryName: 'lineString'
+})
 
 export const arrayInteractions = [{
-    draw : drawInteraction,
-    del : delPolygon
+    drawPolygon: drawPolygonInteraction,
+    drawLineString: drawLineInteraction
 }]
