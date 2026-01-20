@@ -1,13 +1,24 @@
+// ANGULAR //
 import { Injectable } from '@angular/core';
+
+// SHARED //
+import { styleArray } from '../shared/styles';
 
 // SERVICIOS //
 import { MapService } from './map.service';
-import { GeometryCollection, GeometryFactory, LinearRing, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'jsts/org/locationtech/jts/geom';
-import OL3Parser from 'jsts/org/locationtech/jts/io/OL3Parser';
+
+// JSTS //
+// LIBRERIA JSTS
+import 'jsts/org/locationtech/jts/monkey.js'; // Soluciona el problema de ".union" function doesn`t exist
+import OL3Parser from 'jsts/org/locationtech/jts/io/OL3Parser'
+import GeometryFactory from 'jsts/org/locationtech/jts/geom/GeometryFactory';
 import Polygonizer from 'jsts/org/locationtech/jts/operation/polygonize/Polygonizer';
 import UnaryUnionOp from 'jsts/org/locationtech/jts/operation/union/UnaryUnionOp';
+// import UnionOp from 'jsts/org/locationtech/jts/operation/union/UnionOp.js';
+import OverlayOp from 'jsts/org/locationtech/jts/operation/overlay/OverlayOp';
+// OL OPENLAYERS //
 import Feature from 'ol/Feature';
-import { styleArray } from '../shared/styles';
+import { Geometry, GeometryCollection, LinearRing, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'ol/geom';
 
 @Injectable({
   providedIn: 'root'
@@ -15,9 +26,10 @@ import { styleArray } from '../shared/styles';
 export class ToolsService {
   private polIndex: number = 0;
 
-  constructor(
-    private _mapService: MapService
-  ) { }
+  constructor(private _mapService: MapService) {
+    // Vector sources and layers are accessed directly from MapService
+  }
+
 
   /**
    * Description Metodo para cortar poligonos con una linea
@@ -95,8 +107,6 @@ export class ToolsService {
     console.log('Poligonos generados', polygons)
     // Si se generan 2 o mas poligonos
     if (polygons.size() >= 2) {
-
-      this._mapService.drawnVectorSource.removeFeature(poligono);
       // Iterator para recorrer los nuevos poligonos
       let itPolygon = polygons.iterator();
       while (itPolygon.hasNext()) {
@@ -124,9 +134,11 @@ export class ToolsService {
         newPolygon.set('__originalStyle', styleArray[0].polygon);
         newPolygon.set('selected', false);
         this._mapService.drawnVectorSource.addFeature(newPolygon);
+        console.log('Poligonos en drawnVectorSource', this._mapService.drawnVectorSource.getFeatures());
       }
 
     }
+    this._mapService.drawnVectorSource.removeFeature(poligono);
     this._mapService.lineVectorSource.removeFeature(linea);
     // console.log('Linea de corte añadida al mapa',this.lineVectorSource.getFeatures());
   }
