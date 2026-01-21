@@ -27,16 +27,16 @@ import { styleArray } from '../shared/styles';
 export class MapService {
 
   // Subject para emitir en caso de cambios en el mapa
-  public map!: Map;
+  private map!: Map;
   public layers: any[] = [];
 
   // Source y Capa para pintar Lineas
-  public lineVectorSource: any;
-  public lineVectorLayer: any;
+  private lineVectorSource: any;
+  private lineVectorLayer: any;
 
   // Source y Capa para pintar Poligonos
-  public drawnVectorSource: any;
-  public drawnVectorLayer: any;
+  private drawnVectorSource: any;
+  private drawnVectorLayer: any;
 
   // Subject para emitir en caso de cambios en el array de las capas del mapa
   private layerArraySubject: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([{ name: 'Cargando...', selected: false }]);
@@ -153,6 +153,40 @@ export class MapService {
     this.map.addLayer(this.drawnVectorLayer);
     console.log('Capa de poligonos desde el map.service.ts');
     return this.drawnVectorLayer;
+  }
+
+  /**
+   * Description aniade un feature a drawnVectorSource.
+   *
+   * @param {Feature<Polygon>} feature 
+   */
+  addFeatureToDrawnVectorSource(feature: Feature<Polygon>) {
+    this.drawnVectorSource.addFeature(feature);
+  }
+
+  /** 
+   * Description borra un feature de drawnVectorSource
+   * 
+   */
+  removeFeatureFromDrawnVectorSource(feature: Feature<Polygon>) {
+    this.drawnVectorSource.removeFeature(feature);
+  }
+
+  /**
+   * Description aniade un feature a lineVectorSource.
+   *
+   * @param {Feature<LineString>} feature 
+   */
+  addFeatureToLineVectorSource(feature: Feature<LineString>) {
+    this.lineVectorSource.addFeature(feature);
+  }
+
+  /** 
+   * Description borra un feature de lineVectorSource
+   * 
+   */
+  removeFeatureFromLineVectorSource(feature: Feature<LineString>) {
+    this.lineVectorSource.removeFeature(feature);
   }
 
   /**

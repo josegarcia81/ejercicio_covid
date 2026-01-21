@@ -63,4 +63,33 @@ Este directorio contiene todas las propuestas de mejora y soluciones para el pro
 
 ---
 
-*Última actualización: 2026-01-13*
+*Última actualización: 2026-01-21*
+
+### 03 - PrimeNG AutoComplete - Explicación
+**Archivo:** [`03-autocomplete-primeng.md`](./03-autocomplete-primeng.md)
+**Estado:** ⏳ Pendiente
+**Descripción:** Explicación detallada y comparativa del componente p-autoComplete vs p-listbox, con ejemplos de implementación.
+
+---
+
+### 04 - Implementación AutoComplete Estados
+**Archivo:** [`04-implementacion-autocomplete-estados.md`](./04-implementacion-autocomplete-estados.md)
+**Estado:** ⏳ Pendiente
+**Descripción:** Guía paso a paso para implementar el buscador de estados con autocompletado usando un array de objetos o strings.
+
+---
+
+### 05 - Personalizar Estilos PrimeNG
+**Archivo:** [`05-personalizar-estilos-primeng.md`](./05-personalizar-estilos-primeng.md)
+**Estado:** ⏳ Pendiente
+**Descripción:** Estrategias y ejemplos (SCSS) para personalizar la apariencia de los componentes de PrimeNG, específicamente paginadores.
+
+---
+
+### 06 - Refactorización Tools Service
+**Archivo:** [`06-tools-service-refactor.md`](./06-tools-service-refactor.md)
+**Estado:** ⏳ Pendiente
+**Fecha:** 2026-01-21
+**Descripción:** Análisis y propuesta para optimizar `tools.service.ts`, eliminando duplicación de código, mejorando el uso de JSTS y asegurando el tipado.
+
+---

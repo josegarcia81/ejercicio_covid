@@ -73,14 +73,14 @@ export class NavBarComponent implements OnInit, AfterViewInit {
     // Obtener datos de la API Nombre e Iniciales
     this._covidData.getStatesInfo().subscribe(statesInfo => {
       this.statesInfo = statesInfo; // CovidData[] ya mapeado en el servicio
-      console.log('Nav-Bar statesInfo', this.statesInfo);
+      // console.log('Nav-Bar statesInfo', this.statesInfo);
 
     });
 
     // Obtener datos Covid completos de cada estado
     this._covidData.getCovidData().subscribe(covidData => {
       this.covidDataArray = covidData; // CovidData[] ya mapeado en el servicio
-      console.log('Nav-Bar Covid data array', this.covidDataArray);
+      // console.log('Nav-Bar Covid data array', this.covidDataArray);
 
       // Insertar el nombre de cada estado
       this.statesInfo.forEach((state, index) => {
