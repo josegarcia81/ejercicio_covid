@@ -977,7 +977,7 @@ export class MapComponent implements OnInit, AfterViewInit {
             });
             if (featureTocada?.get('name') === drawedFeature.get('name')) {
               alert('No se puede unir el poligono consigo mismo');
-              this.drawnVectorSource.removeFeature(drawedFeature);
+              this._mapService.removeFeatureFromDrawnVectorSource(drawedFeature);
               return;
             }
 
