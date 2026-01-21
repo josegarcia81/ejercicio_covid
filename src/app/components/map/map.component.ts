@@ -233,7 +233,7 @@ export class MapComponent implements OnInit, AfterViewInit {
 
     // Features de los estados
     this.usSource = new VectorSource({
-      url: "../../assets/data/us-states.geojson",
+      url: "assets/data/us-states.geojson",
       format: new GeoJSON()
     })
     // Capa con los estados Hacer asi mejor 
