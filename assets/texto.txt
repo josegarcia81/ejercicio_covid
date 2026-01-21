@@ -1,0 +1,2 @@
+// private populationDataSubject: BehaviorSubject<Population> = new BehaviorSubject<Population>({name:'', population: ''})
+  // private populationData$?= this.populationDataSubject.asObservable();
