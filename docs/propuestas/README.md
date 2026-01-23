@@ -93,3 +93,27 @@ Este directorio contiene todas las propuestas de mejora y soluciones para el pro
 **Descripción:** Análisis y propuesta para optimizar `tools.service.ts`, eliminando duplicación de código, mejorando el uso de JSTS y asegurando el tipado.
 
 ---
+
+### 07 - Corrección Lógica Unión Polígonos
+**Archivo:** [`07-correccion-logica-union.md`](./07-correccion-logica-union.md)
+**Estado:** ⏳ Pendiente
+**Fecha:** 2026-01-21
+**Descripción:** Solución al error de auto-intersección y optimización del bucle de detección en la herramienta de unión de polígonos.
+
+---
+
+### 08 - Análisis Panel Lateral
+**Archivo:** [`08-analisis-panel-lateral.md`](./08-analisis-panel-lateral.md)
+**Estado:** ✅ Implementado
+**Fecha:** 2026-01-22
+**Descripción:** Análisis del comportamiento del panel nav-container y solución propuesta para ocultarlo/mostrarlo de forma robusta usando transformaciones CSS.
+
+---
+
+### 09 - Panel Lateral Derecha
+**Archivo:** [`09-panel-lateral-derecha.md`](./09-panel-lateral-derecha.md)
+**Estado:** ⏳ Pendiente
+**Fecha:** 2026-01-22
+**Descripción:** Propuesta técnica (SCSS) para mover el panel lateral y el mecanismo de apertura al lado derecho de la pantalla.
+
+---

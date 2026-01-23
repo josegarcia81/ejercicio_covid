@@ -20,6 +20,7 @@ import OverlayOp from 'jsts/org/locationtech/jts/operation/overlay/OverlayOp';
 import Feature from 'ol/Feature';
 import { Geometry, GeometryCollection, LinearRing, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon } from 'ol/geom';
 import VectorSource from 'ol/source/Vector';
+import GeoJSON from 'ol/format/GeoJSON';
 
 @Injectable({
   providedIn: 'root'
@@ -351,5 +352,19 @@ export class ToolsService {
     this._mapService.removeFeatureFromDrawnVectorSource(pol1);
     this._mapService.removeFeatureFromDrawnVectorSource(pol2);
 
+  }
+  // Metodo para guardar archivo en formato geojson
+  saveGeoJSON() {
+    const features = this._mapService.getDrawnVectorSource();
+    const geojson = new GeoJSON();
+    const geojsonFeatures = geojson.writeFeaturesObject(features);
+    const geojsonString = JSON.stringify(geojsonFeatures);
+    const blob = new Blob([geojsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'features.geojson';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }

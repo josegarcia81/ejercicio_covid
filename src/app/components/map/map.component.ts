@@ -338,7 +338,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         // console.log('Filtro por capa drawnFeatureAtPixel todos los features:', this.drawnFeatureAtPixel);
         // console.log('AllFeatures at pixel', features);
         // console.log('Layer collection', this.map.getLayers());
-        console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures(), this.drawnVectorSource.getFeatures());
+        console.log('Features en drawnVectorSource:', this.drawnVectorSource.getFeatures(), this._mapService.getDrawnVectorSource().getFeatures());
 
         // Si hay features dibujados en el pixel clickado
         if (this.drawnFeatureAtPixel.length > 0) {
@@ -967,6 +967,7 @@ export class MapComponent implements OnInit, AfterViewInit {
         } else {
           // this.subControlBarNavBar.setVisible(false);
           this.fileUpload = false;
+          this._toolsService.saveGeoJSON();
         }
       }
     });
